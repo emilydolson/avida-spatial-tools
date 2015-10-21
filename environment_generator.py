@@ -1,16 +1,11 @@
 #!/usr/bin/python
+
+#This program allows you to automatically generate environment files with
+#complex spatial resource layouts
+
 import argparse
 import random
-import sys, os
 from math import sqrt, log, floor, ceil
-import numpy as np
-import scipy.stats as stats
-
-#hpcc doesn't have matplotlib and ipythonblocks
-from ipythonblocks import BlockGrid
-import matplotlib
-from matplotlib import pyplot as plt
-import patch_analysis
 
 parser = argparse.ArgumentParser(description="Generate environment files for environmental heterogeneity experiment.", add_help=False)
 
@@ -34,7 +29,7 @@ parser.add_argument("--outflow", default=.01, type=float, help="Sets amount of o
 parser.add_argument("--resources", default=["resNOT", "resAND", "resOR", "resNOR", "resNAND", "resORN", "resANDN", "resXOR", "resEQU"], nargs="*", type=str, help = "The set of resources to be used. Defaults to logic-9.")
 parser.add_argument("--randomPatch", nargs="*", help = "Place a randomly generated patch in the environment. By default, this will include all resources. If additional command-line resources are specified, then only this set will be included in the patch. These resources will not be included with well-mixed resources.")
 parser.add_argument("--evenSquares", type=int, help = "Place evenly spaced squares of the specified size in environment")
-parser.add_argument("--gradientResources", nargs="*", help = "Designates which resources are to be implemented as gradient resources (circles in space). If this flag is not used, no resources will be gradients. If this flag is used and no additional arguments are passed, all ressources will be gradients. Additional arguments can be passed to this flag to specify a subset of the resources to represent as cells.")
+parser.add_argument("--gradientResources", nargs="*", help = "Designates which resources are to be implemented as gradient resources (circles in space). If this flag is not used, no resources will be gradients. If this flag is used and no additional arguments are passed, all resources will be gradients. Additional arguments can be passed to this flag to specify a subset of the resources to represent as cells.")
 parser.add_argument("--cellResources", nargs="*", help = "Designates which resources are to be implemented as cell resources. If this flag is not used, no resources will be cells. If this flag is used and no additional arguments are passed, all resources will be cells. Additional arguments can be passed to this flag to specify a subset of the resources to represent as cells.")
 
 #~~~~~~~~~~Settings for random patches~~~~~~~~~~~~~~~~~~~
@@ -62,7 +57,7 @@ parser.add_argument("--randNPatches", action="store_true", help = "Use a random 
 parser.add_argument("--patchesPerSide", default=4, type=int, help="number of patches in one row or column of world (assume square layout)")
 
 #Other options
-parser.add_argument("--notcommon", action="store_true", help = "Included for backwards compatability - makes plateu gradient resources not be common. This should generally not be specified, although there isn't much evidence that it matters.")
+parser.add_argument("--notcommon", action="store_true", help = "Included for backwards compatability - makes plateau gradient resources not be common. This should generally not be specified, although there isn't much evidence that it matters.")
 
 #~~~~~~~~~Reactions~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 parser.add_argument("--reaction", nargs="*", help="A list of resources to make corresponding reactions for. Default if flag is set is to add all.")
@@ -120,8 +115,8 @@ def main():
     #print args
 
     if args.environmentPicker:
-        import environment_maker_gui as ep
-        cells = ep.cell_picker(args.worldSize, args.worldSize).run()
+        from cell_picker import cell_picker
+        cells = cell_picker(args.worldSize, args.worldSize).run()
         #print args.worldSize
         #cells = ep.cell_picker(60, 60, [(args.worldSize,args.worldSize)]).run()
         cells = list(set(cells))
