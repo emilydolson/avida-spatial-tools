@@ -1,22 +1,16 @@
 __author__ = "Emily Dolson"
 __copyright__ = "Copyright 2014, Emily Dolson"
-__license__ = "GPL"
 __version__ = "0.9"
 __maintainer__ = "Emily Dolson"
 __email__ = "EmilyLDolson@gmail.com"
 __status__ = "Development"
 
-from math import sqrt, log, floor, ceil
-import copy
-from copy import deepcopy
 import random, glob, re, string
-import numpy as np
 import scipy.stats as stats
 from scipy.spatial.distance import pdist
 import scipy.cluster.hierarchy as hierarchicalcluster
 from matplotlib import animation
 from matplotlib.collections import PatchCollection
-import pysal
 from pysal.esda.getisord import G_Local
 from utils import *
 
@@ -141,7 +135,8 @@ def make_n_tasks_grid(file_list, agg=mean):
         for j in range(len(data)):
             for k in range(len(data[i][j])):
                 data[i][j][k] = data[i][j][k].count("1")
-            data[i][j] = agg(data[i][j])
+
+    data = agg_grid(data, agg)
 
     #TODO: Is "nTasks" option actually necessary?
     return color_grid(data, "nTasks")
@@ -164,7 +159,7 @@ def optimal_phenotypes(env_file, grid_file, world_size=60, agg=mean):
                    diff -= 1
                 phenotypes[i][j][k] = diff
 
-            phenotypes[i][j] = agg(phenotypes[i][j])
+    phenotypes = agg_grid(phenotypes, agg)
 
     grid = color_grid(phenotypes)
     make_imshow_plot(grid, "test3")
@@ -614,7 +609,7 @@ def compute_diversity_gradient_snazzy_gaussian(world, sd=5, recursive=False):
     focal = (0,0)
     
     #Intialize phenotype count dicts
-    dicts = copy.deepcopy(world)
+    dicts = deepcopy(world)
     for i in range(world_x):
         for j in range(world_y):
             dicts[i][j] = {}
@@ -724,168 +719,6 @@ def getis_ord(data):
     print G_Local(data, w).p_sim
     #plt.imshow()
     plt.show()
-
-def convert_to_pysal(data):
-    w = pysal.lat2W(len(data[0]), len(data))
-    data = np.array(data)
-    data = np.reshape(data, (len(data)*len(data[0]), 1))
-    return w, data
-
-def calc_environment_entropy(res_dict, world_size = (60,60), exclude_desert=False):
-    """
-    Calculate the Shannon entropy of a given environment, treating each niche
-    (where niches are defined by regions in which different sets of resources
-    are rewarded) as a category. The environment is specified with the
-    following inputs:
-
-    res_dict - a dictionary in which keys are resources in the environment
-    and values are list of tuples representing the cells they're in.
-
-    world_size - a tuple indicating the dimensions of the world.
-           Default = 60x60, because that's the default Avida world siz
-
-    excludeDesert - an optional argument which defaults to False. If True is
-          specific, niches in which no tasks are rewarded
-          will not be considered in the calculation.
-    """
-
-    #Initialize list of list of sets to record which niches are where
-    world = make_niche_grid(res_dict, world_size)
-
-    niches = make_niche_dictionary(world, world_size)
-
-    if exclude_desert and niches.has_key(frozenset([])):
-        del niches[frozenset([])]
-
-    #Calculate entropy
-    return entropy(niches)
-
-def make_niche_dictionary(world, world_size, mode="freq"):
-    #loop through world, counting frequency of each niche
-    niches = {}
-    for i in range(world_size):
-        for j in range(world_size):
-            #use frozensets because they are hashable
-            if niches.has_key(frozenset(world[i][j])):
-                if mode == "freq":
-                    niches[frozenset(world[i][j])] += 1
-                elif mode == "cells":
-                    niches[frozenset(world[i][j])].append([i,j])
-            else:
-                if mode == "freq":
-                    niches[frozenset(world[i][j])] = 1
-                elif mode == "cells":
-                    niches[frozenset(world[i][j])] = [[i,j]]
-                else:
-                    print "Unrecognized mode for make_niche_dictionary"
-                    return
-                    
-    return niches
-
-def sqrt_shannon_entropy(filename):
-    """
-    Calculates Shannon entropy based on square root of phenotype count.
-    This might account for relationship between population size and
-    evolvability.
-    """
-    data = load_grid_data(filename, "raw")
-    phenotypes = {}
-    for r in data:
-        for c in r:
-            if phenotypes.has_key(c):
-                phenotypes[c] += 1
-            else:
-                phenotypes[c] = 1
-
-    for key in phenotypes.keys():
-        phenotypes[key] = sqrt(phenotypes[key])
-
-    return entropy(phenotypes)
-
-#~~~~~~~~~~~~~~~~~~~~~~~METRIC CALCULATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~#
-
-
-def patch_richness(res_dict, world_size=60):
-    world = make_niche_grid(res_dict, world_size)
-    niches = {}
-    for i in range(world_size):
-        for j in range(world_size):
-
-            #use frozensets because they are hashable
-            if niches.has_key(frozenset(world[i][j])):
-                niches[frozenset(world[i][j])] += 1
-            else:
-                niches[frozenset(world[i][j])] = 1
-
-    return len(niches.keys())
-
-def entropy(dictionary):
-    """
-    Helper function for entropy calculations.
-    Takes a frequency dictionary and calculates entropy of the keys.
-    """
-    total = 0.0
-    entropy = 0
-    for key in dictionary.keys():
-        total += dictionary[key]
-
-    for key in dictionary.keys():
-        entropy += dictionary[key]/total * log(1.0/(dictionary[key]/total), 2)
-    return entropy
-
-def find_edges(res_dict, world_size=60):
-    world = make_niche_grid(res_dict, anchors, rad, world_size)
-    edge_count = 0
-    for i in range(world_size):
-        for j in range(world_size):
-            if i >= 1:
-                if world[i][j] != world[i-1][j]:
-                    edge_count += 1
-                elif j >= 1 and world[i][j] != world[i-1][j-1]:
-                    edge_count += 1
-                elif j < args.worldSize - 1 and world[i][j] != world[i-1][j+1]:
-                    edge_count += 1
-            elif j >= 1:
-                if world[i][j] != world[i][j-1]:
-                    edge_count += 1
-                elif i < world_size - 1 and world[i][j] !=  world[i+1][j-1]:
-                    edge_count += 1
-            elif i < world_size - 1:
-                if world[i][j] != world[i+1][j]:
-                    edge_count += 1
-                elif j < world_size - 1 and world[i][j] != world[i+1][j+1]:
-                    edge_count += 1
-            elif j < world_size - 1:
-                if world[i][j] != world[i][j+1]:
-                    edge_count += 1
-    return edge_count
-
-
-def n_tasks(dec_num):
-    """
-    Takes a decimal number as input and returns the number of ones in the
-    binary representation.
-    This translates to the number of tasks being done by an organism with a
-    phenotype represented as a decimal number.
-    """
-    bitstring = ""
-    try:
-        bitstring = dec_num[2:]
-    except:
-        bitstring = bin(int(dec_num))[2:] #cut off 0b
-    #print bin(int(dec_num)), bitstring
-    return bitstring.count("1")
-
-
-def weighted_hamming(b1, b2):
-    assert(len(b1) == len(b2))
-    hamming = 0
-    for i in range(len(b1)):
-        if b1[i] != b2[i]:
-            #differences at more significant (leftward) bits are more important
-            if i > 0:
-                hamming += 1 + 1.0/i
-    return hamming
 
 def task_percentages(data):
     pdata = deepcopy(data)

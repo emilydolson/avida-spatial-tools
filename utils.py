@@ -1,8 +1,9 @@
 #This file contains functions that are used throuhgout avida-spatial-tools
 
-from math import sqrt
+from math import sqrt, log, floor, ceil
 from copy import deepcopy
-
+import pysal
+import numpy as np
 
 def dict_increment(d, key, amount):
     if key in d:
@@ -42,6 +43,48 @@ def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or"
             phenotype[i] = "1"
     assert(phenotype.count("1") == len(res_set))
     return "0b"+"".join(phenotype)
+
+
+def weighted_hamming(b1, b2):
+    """
+    Hamming distance that emphasizes differences earlier in strings.
+    """
+    assert(len(b1) == len(b2))
+    hamming = 0
+    for i in range(len(b1)):
+        if b1[i] != b2[i]:
+            #differences at more significant (leftward) bits are more important
+            if i > 0:
+                hamming += 1 + 1.0/i
+                #This weighting is completely arbitrary
+    return hamming
+
+
+def n_tasks(dec_num):
+    """
+    Takes a decimal number as input and returns the number of ones in the
+    binary representation.
+    This translates to the number of tasks being done by an organism with a
+    phenotype represented as a decimal number.
+    """
+    bitstring = ""
+    try:
+        bitstring = dec_num[2:]
+    except:
+        bitstring = bin(int(dec_num))[2:] #cut off 0b
+    #print bin(int(dec_num)), bitstring
+    return bitstring.count("1")
+
+def convert_to_pysal(data):
+    """
+    Pysal expects a distance matrix, and data formatted in a numpy array.
+    This functions takes a data grid and returns those things.
+    """
+    w = pysal.lat2W(len(data[0]), len(data))
+    data = np.array(data)
+    data = np.reshape(data, (len(data)*len(data[0]), 1))
+    return w, data
+
 
 #~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #Provided for easy use with agg_grid
@@ -104,3 +147,4 @@ def initialize_grid(world_size, inner):
         for j in range(world_size[0]):
             data[i].append(deepcopy(inner))
     return data
+

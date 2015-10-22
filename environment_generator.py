@@ -449,6 +449,5 @@ def genReaction(resource, depletable=0):
             ":depletable=" + str(int(depletable)) + " requisite:max_count=" \
             + str(args.maxCount) + "\n"
 
-
 if __name__ == "__main__":
     main()
