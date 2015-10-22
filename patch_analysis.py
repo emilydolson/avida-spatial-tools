@@ -1,4 +1,5 @@
 from math import sqrt, pi, floor, ceil
+from utils import *
 from avidaSpatialTools import *
 import sys, glob
 
@@ -298,14 +299,6 @@ def proximity_index(patch, other_patches):
 
 def similarity_index(patch, other_patches):
     pass
-
-
-
-def dist(p1, p2):
-    """
-    Returns the distance between the two given tuples.
-    """
-    return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 if __name__ == "__main__":
     main()

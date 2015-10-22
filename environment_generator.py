@@ -6,6 +6,7 @@
 import argparse
 import random
 from math import sqrt, log, floor, ceil
+from utils import *
 
 parser = argparse.ArgumentParser(description="Generate environment files for environmental heterogeneity experiment.", add_help=False)
 
@@ -448,11 +449,6 @@ def genReaction(resource, depletable=0):
             ":depletable=" + str(int(depletable)) + " requisite:max_count=" \
             + str(args.maxCount) + "\n"
 
-def dist(p1, p2):
-    """
-    Returns the distance between the two given tuples.
-    """
-    return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 if __name__ == "__main__":
     main()
