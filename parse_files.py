@@ -171,10 +171,12 @@ def parse_environment_file(filename, world_size=(60,60)):
     for line in lines:
         if line.startswith("GRADIENT_RESOURCE"):
             name, cells = parse_gradient(line, world_size)
-            dict_increment(res_dict, name, cells)
-        if line.startswith("CELL"):
+        elif line.startswith("CELL"):
             name, cells = parse_cell(line, world_size)
-            dict_increment(res_dict, name, cells)
+        else:
+            continue
+        
+        dict_increment(res_dict, name, cells)
             
     #Create a map of niches across the environment and return it
     return make_niche_grid(res_dict, world_size)
