@@ -108,10 +108,10 @@ class cell_picker():
 
         #Check bounds
         for i in range(2):
-            for ls in [x_range, y_range]
-            if ls[i] < 0:
-                ls[i] = 0
-            if ls[i] >= self.rows:
+            for ls in [x_range, y_range]:
+                if ls[i] < 0:
+                    ls[i] = 0
+                if ls[i] >= self.rows:
                     ls[i] = self.rows-1
             
         for x in range(min(x_range), max(x_range)+1):
