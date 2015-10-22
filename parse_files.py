@@ -47,11 +47,11 @@ def load_grid_data(file_list, length = 9):
             lines[i] = lines[i].split()
             for j in range(world_size[0]):
                 val = bin(int(lines[i][j]))
-                neg = val.find("-") > - 1
-                while len(val) < length + 2 + neg:
-                    #can now handle -1
-                    b_ind = val.find("b") + 1
-                    val = val[:b_ind] + "0" + val[b_ind:]
+                #neg = val.find("-") > - 1
+                #while len(val) < length + 2 + neg:
+                #    #can now handle -1
+                #    b_ind = val.find("b") + 1
+                #    val = val[:b_ind] + "0" + val[b_ind:]
                 data[i][j].append(val)
 
         infile.close()

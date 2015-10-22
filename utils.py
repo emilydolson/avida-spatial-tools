@@ -42,6 +42,12 @@ def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or"
         if full_list[i] in res_set:
             phenotype[i] = "1"
     assert(phenotype.count("1") == len(res_set))
+    
+    #Remove uneceesary leading 0s
+    while phenotype[0] == "0":
+        phenotype = phenotype[1:]
+    
+
     return "0b"+"".join(phenotype)
 
 
@@ -109,11 +115,24 @@ def median(ls):
     ls.sort()
     return ls[int(floor(len(ls)/2.0))]
 
-def string_avg(strings):
+def string_avg(strings, binary=False):
     """
     Takes a list of strings of equal length and returns a string containing
     the most common value from each index in the string.
+
+    Optional argument: binary - a boolean indicating whether or not to treat
+    strings as binary numbers (fill in leading zeros if lengths differ).
     """
+
+    if binary: #Assume this is a binary number and fill leading zeros
+        strings = deepcopy(strings)
+        longest = len(max(strings, key=len))
+
+        for i in range(len(strings)):
+            while len(strings[i]) < longest:
+                split_string = strings[i].split("b") 
+                strings[i] = split_string[0] + "b0" + split_string[1]
+
     avg = ""
     for i in (range(len(strings[0]))):
         opts = []

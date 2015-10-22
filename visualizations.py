@@ -17,24 +17,13 @@ from matplotlib import pyplot as plt
 import matplotlib
 from parse_files import *
 
-RES_SET = ["safe"]
-#RES_SET = ["not", "nand", "and", "orn", "or", "andn", "nor", "xor", "equ"]
+#RES_SET = ["safe"]
+RES_SET = ["not", "nand", "and", "orn", "or", "andn", "nor", "xor", "equ"]
 
 hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [0, .075, .175, .2, .425, .575, .01, .5]
 #random.shuffle(hues)
-
-def main():
-    #data = load_grid_data("/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat")
-    #compute_diversity_gradient(data, 15)
-    #test_color_percentages()
-    #test_optimal_phenotypes()
-    #test_visualize_environment()
-    #test_make_species_grid()
-    #test_paired_environment_phenotype_grid()
-    #paired_environment_phenotype_movie(glob.glob("/home/emily/repos/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_50047/grid_task.*.dat"), "/home/emily/repos/resource-heterogeneity/environmentFiles/env50047.cfg")
-    paired_environment_phenotype_movie(glob.glob("/home/emily/hpcc/conservation/round_2_results/4_patches_15_cells_100_killed-pop1_10901/data/grid_task.*.dat"), "/home/emily/hpcc/conservation/configs/conservation-4patches_15each-environment.cfg", 15, ["safe"])
 
 #~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -61,6 +50,7 @@ def cluster(grid, n, ranks=None):
         else:
             ranks = cluster_types(types, n)
 
+    print '0b101000000' in phenotypes
     ranks["0b000000000"] = 0
     ranks["0b0"] = 0
     ranks["0b1"] = -1
@@ -71,7 +61,14 @@ def cluster(grid, n, ranks=None):
     return assignments, len(ranks.keys())
 
 def cluster_types(types, max_clust=12):
+
     ls = [list(t[2:]) for t in types]
+    longest = max([len(l) for l in ls])
+
+    for i in range(len(ls)):
+        while len(ls[i]) < longest:
+            ls[i].insert(0, "0")
+
     dist_matrix = pdist(ls, weighted_hamming)
     clusters = hierarchicalcluster.complete(dist_matrix)
     #hierarchicalcluster.dendrogram(clusters)
@@ -87,7 +84,7 @@ def cluster_types(types, max_clust=12):
 
     cluster_ranks = dict.fromkeys(cluster_dict.keys())
     for key in cluster_dict:
-        cluster_ranks[key] = eval(string_avg(cluster_dict[key]))
+        cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
 
     i = len(cluster_ranks)
     for key in sorted(cluster_ranks, key=cluster_ranks.get):
@@ -99,10 +96,11 @@ def cluster_types(types, max_clust=12):
         for typ in cluster_dict[key]:
             ranks[typ] = cluster_ranks[key]
    
+
     return ranks
 
 def rank_types(types):
-    include_null = '0b000000000' in types
+    include_null = '0b0' in types
     sorted_types = deepcopy(types)
     for i in range(len(sorted_types)):
         sorted_types[i] = eval(sorted_types[i])
@@ -255,7 +253,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     return anim
 
 def plot_phens(phen_grid, k, types):
-    grid = color_grid(cluster(phen_grid, k, types), False, k+1, True)
+    grid = color_grid(cluster(phen_grid, k, types)[0], k+1, True)
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if grid[i][j] != [0,0,0]:
@@ -291,7 +289,7 @@ def plot_phens_blits(phen_grid, k, types, patches):
     return patches
 
 def plot_world(world, k, types, p=None):
-    world = color_grid(cluster(world, k, types)[0], False, k+1, True)
+    world = color_grid(cluster(world, k, types)[0], k+1, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -305,15 +303,23 @@ def plot_world(world, k, types, p=None):
 def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
 
     phen_grid = agg_grid(load_grid_data(species_files), agg)
-    world_size = len(phen_grid)
+    world_size = (len(phen_grid[0]), len(phen_grid))
     world_dict = parse_environment_file_list(env_files, world_size)
     seed = world_dict.keys()[0]
     world = world_dict[seed]
     seed = seed.strip("abcdefghijklmnopqrstuvwxyzF/_-")
 
     phenotypes = [phen_grid[i][j] for i in range(len(phen_grid)) for j in range(len(phen_grid[i]))]
-    niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
-    niches = [res_set_to_phenotype(i) for i in niches]
+    niches = deepcopy(world)
+    niches = [niches[i][j] for i in range(len(niches)) for j in range(len(niches[i]))]
+    niches = [res_set_to_phenotype(i, RES_SET) for i in niches]
+
+
+    print len(niches)
+    print world_size
+    print world_size[0]*world_size[1]
+    print len(phenotypes)
+    print '0b101000000' in niches
 
     types = set(phenotypes+niches)
     types.discard("0b000000000")

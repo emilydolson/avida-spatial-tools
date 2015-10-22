@@ -17,10 +17,21 @@ def test_make_species_grid():
 def test_paired_environment_phenotype_grid():
     env = "/media/emily/hdd/resource-heterogeneity/environmentFiles/env11097.cfg"
     grid = "/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat"
-    #grid = "/home/emily/repos/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_31204/grid_task.100000.dat"
+    paired_environment_phenotype_grid(grid, env)
+
+def test_paired_environment_phenotype_grid_circles():
+    env = "/media/emily/hdd/resource-heterogeneity/environmentFiles/env11097.cfg"
+    grid = "/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat"
     paired_environment_phenotype_grid_circles(grid, env)
+
 
 def test_optimal_phenotypes():
     env = "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50047.cfg"
     grid = "/media/emily/hdd/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_50047/grid_task.100000.dat"
     optimal_phenotypes(env, grid, (59,59))
+
+def test_paired_environment_phenotype_movie():
+    paired_environment_phenotype_movie(glob.glob("/home/emily/hpcc/conservation/round_2_results/4_patches_15_cells_100_killed-pop1_10901/data/grid_task.10*.dat"), "/home/emily/hpcc/conservation/configs/conservation-4patches_15each-environment.cfg", 15, ["safe"])
+
+if __name__ == "__main__":
+     test_paired_environment_phenotype_grid()
