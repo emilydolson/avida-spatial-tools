@@ -1,6 +1,5 @@
 __author__ = "Emily Dolson"
 __copyright__ = "Copyright 2014, Emily Dolson"
-
 __license__ = "GPL"
 __version__ = "0.9"
 __maintainer__ = "Emily Dolson"
@@ -19,14 +18,17 @@ from matplotlib import animation
 from matplotlib.collections import PatchCollection
 import pysal
 from pysal.esda.getisord import G_Local
+from utils import *
 
 try:
     import matplotlib
-    #matplotlib.use('PS')
     from matplotlib import pyplot as plt
 except:
     print "Matplotlib import failed"
     print "AvidaSpatialTools is running in HPCC Compatability Mode"
+
+RES_SET = ["safe"]
+#RES_SET = ["not", "nand", "and", "orn", "or", "andn", "nor", "xor", "equ"]
 
 hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
@@ -34,14 +36,15 @@ hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #random.shuffle(hues)
 
 def main():
-    data = load_grid_data("/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat")
-    compute_diversity_gradient(data, 15)
+    #data = load_grid_data("/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat")
+    #compute_diversity_gradient(data, 15)
     #test_color_percentages()
     #test_optimal_phenotypes()
     #test_visualize_environment()
     #test_make_species_grid()
     #test_paired_environment_phenotype_grid()
     #paired_environment_phenotype_movie(glob.glob("/home/emily/repos/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_50047/grid_task.*.dat"), "/home/emily/repos/resource-heterogeneity/environmentFiles/env50047.cfg")
+    paired_environment_phenotype_movie(glob.glob("/home/emily/hpcc/conservation/round_2_results/4_patches_15_cells_100_killed-pop1_10901/data/grid_task.*.dat"), "/home/emily/hpcc/conservation/configs/conservation-4patches_15each-environment.cfg", 15, ["safe"])
 
 #~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
@@ -74,9 +77,9 @@ def cluster(grid, n, ranks=None):
         if phenotypes[0][:2] == "0b":
             pass
         else:
-            phenotypes = [res_set_to_phenotype(i) for i in phenotypes]
+            phenotypes = [res_set_to_phenotype(i, RES_SET) for i in phenotypes]
     except:
-        phenotypes = [res_set_to_phenotype(i) for i in phenotypes]
+        phenotypes = [res_set_to_phenotype(i, RES_SET) for i in phenotypes]
 
     assignments = deepcopy(grid)
 
@@ -89,6 +92,8 @@ def cluster(grid, n, ranks=None):
             ranks = cluster_types(types, n)
 
     ranks["0b000000000"] = 0
+    ranks["0b0"] = 0
+    ranks["0b1"] = -1
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             assignments[i][j] = ranks[phenotypes[i*len(grid[i])+j]]
@@ -96,7 +101,8 @@ def cluster(grid, n, ranks=None):
     return assignments, len(ranks.keys())
 
 def cluster_types(types, max_clust=12):
-    dist_matrix = pdist([list(t[2:]) for t in types], weighted_hamming)
+    ls = [list(t[2:]) for t in types]
+    dist_matrix = pdist(ls, weighted_hamming)
     clusters = hierarchicalcluster.complete(dist_matrix)
     #hierarchicalcluster.dendrogram(clusters)
     #plt.show()
@@ -192,7 +198,7 @@ def optimal_phenotypes(env_file, grid_file, world_size=60, agg=mean):
     make_imshow_plot(grid, "test3")
     return grid
 
-def paired_environment_phenotype_movie(species_files, env_file, k=15):
+def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
     """
     Makes an animation overlaying colored circles representing phenotypes over
     an imshow() plot indicating the resources present in each cell. Colors
@@ -233,15 +239,25 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15):
     #Create list of all niches and all phenotypes, in phenotype format
     niches = [world[i][j] for i in range(len(world)) \
               for j in range(len(world[i]))]
-    niches = [res_set_to_phenotype(i) for i in niches]
+    
+    niches = [res_set_to_phenotype(i, res_list) for i in niches]
     phenotypes = [phen for col in data for row in col for phen in row]
-    types = set(phenotypes+niches)
 
-    types.discard("0b000000000") #We'll handle this specially
+    #TODO: FIX THIS!
+    if res_list != ["safe"]:
+        types = set(phenotypes+niches)
+    else:
+        types = set(phenotypes)
+
+    types.discard("-0b000000001") #We'll handle this specially
+    types.discard("-0b000000000") #We'll handle this specially
 
     #Do all clustering ahead of time so colors remain consistent.
     types = cluster_types(list(types), k)
+    types["-0b000000001"] = -1 # The empty phenotype/niche should always be rank 0
+    types["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
     types["0b000000000"] = 0 # The empty phenotype/niche should always be rank 0
+    types["0b0"] = 0 # The empty phenotype/niche should always be rank 0
 
     #So we don't have to keep initializig new arrays or screw up original data
     phen_grid = deepcopy(data)
@@ -255,7 +271,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15):
     for i in range(len(phen_grid)):
         for j in range(len(phen_grid[i])):
             patches.append(plt.Circle((j,i), radius=.3, lw=2, ec="black", facecolor=None))
-
+        
     #This will be called to color niches, which are always in background
     def init():
         plot_world(world, k, types)
@@ -264,13 +280,14 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15):
 
     #Change colors of circles as appropriate for new time step
     def animate(n):
+        print n
         #Load in data from time step n
         for i in range(len(data)):
             for j in range(len(data[i])):
                 phen_grid[i][j] = data[i][j][n]
 
         #Recolor circles
-        patches = plot_phens_blits(phen_grid, k, types, patches)
+        plot_phens_blits(phen_grid, k, types, patches)
         return patches,
 
     #Do actual animation
@@ -304,7 +321,7 @@ def plot_phens_circles(phen_grid):
                         first = False
 
 def plot_phens_blits(phen_grid, k, types, patches):
-    grid = color_grid(cluster(phen_grid, k, types), False, k+1, True)
+    grid = color_grid(cluster(phen_grid, k, types)[0], False, k+1, True)
     
     for i in range(len(phen_grid)):
         for j in range(len(phen_grid[i])):
@@ -319,14 +336,13 @@ def plot_world(world, k, types, p=None):
     world = color_grid(cluster(world, k, types)[0], False, k+1, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
+    plt.tight_layout()
     plt.imshow(world, interpolation="none", hold=True)
-    #plt.show()
     axes = plt.gca()
     axes.autoscale(False)
 
     if p != None:
         axes.add_collection(p)
-        #plt.show()
 
 def test_paired_environment_phenotype_grid():
     env = "/media/emily/hdd/resource-heterogeneity/environmentFiles/env11097.cfg"
@@ -420,7 +436,6 @@ def color_grid(data, mode="", denom=9.0, mask_zeros = False):
     complexity and location.
     """
     grid = []
-
     for row in range(len(data)):
         grid.append([])
         for col in range(len(data[row])):
@@ -428,12 +443,17 @@ def color_grid(data, mode="", denom=9.0, mask_zeros = False):
             if mode == "nTasks":
                 data[row][col] = n_tasks(data[row][col])
             #print data[row][col]
-            if float(data[row][col]) != 0:
+            
+            if float(data[row][col]) > 0:
                 arr[0,0,0] = (float(data[row][col])/denom)
                 arr[0,0,1] = 1
                 arr[0,0,2] = 1
 
-            else:
+            elif float(data[row][col]) == 0:
+                arr[0,0,0] = int(not mask_zeros)
+                arr[0,0,1] = int(not mask_zeros)
+                arr[0,0,2] = 1
+            else: #-1
                 arr[0,0,0] = int(not mask_zeros)
                 arr[0,0,1] = int(not mask_zeros)
                 arr[0,0,2] = int(not mask_zeros)
@@ -548,15 +568,16 @@ def visualize_environment(filename, world_size=60, outfile=""):
 
 def test_visualize_environment():
     #env = ["distance0", "distance10", "distance21", "distance29"]
-    env = ["environmentFiles/env50012.cfg", "environmentFiles/env50013.cfg", "environmentFiles/env50014.cfg", "environmentFiles/env50015.cfg"]
+    env = ["/media/emily/hdd/resource-heterogeneity/environmentFiles/env50012.cfg", "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50013.cfg"]#, "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50014.cfg", "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50015.cfg"]
     #grid = "/home/emily/repos/resource-heterogeneity/experiment/radius8_distance12_common/heterogeneity_replication_11857/grid_task.100000.dat"
-    grid = visualize_environment(env, 59)
+    grid = visualize_environment(env, 59, "test_env.png")
 
 def make_imshow_plot(grid, name):
   plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
   plt.imshow(grid, interpolation="none", aspect=1)
-  plt.savefig(name, dpi=1000)
+  plt.tight_layout()
+  plt.savefig(name, dpi=1000, bbox_inches="tight")
 
 def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
     """
@@ -872,12 +893,6 @@ def find_edges(res_list, anchors, rad, world_size=60):
                     edge_count += 1
     return edge_count
 
-def dist(p1, p2):
-    """
-    Returns the distance between the two given tuples.
-    """
-    return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
-
 
 def n_tasks(dec_num):
     """
@@ -918,243 +933,6 @@ def task_percentages(data):
             pdata[i][j] = percentages
 
     return pdata
-
-def dict_increment(d, key, amount):
-    if key in d:
-        d[key] += amount
-    else:
-        d[key] = amount
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~FILE PARSING/DATA INPUT~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-def convert_grid_to_patches():
-    pass
-
-def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
-
-    assert(phenotype[0:2] == "0b")
-    phenotype = phenotype[2:]
-
-    #Fill in leading zeroes
-    while len(phenotype) < len(resources):
-        phenotype = "0" + phenotype
-
-    res_set = set()
-
-    for i in range(len(phenotype)):
-        if phenotype[i] == "1":
-            res_set.add(resources[i])
-
-    assert(phenotype.count("1") == len(res_set))
-    return res_set
-
-def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
-
-    phenotype = len(full_list) * ["0"]
-    for i in range(len(full_list)):
-        if full_list[i] in res_set:
-            phenotype[i] = "1"
-
-    assert(phenotype.count("1") == len(res_set))
-    return "0b"+"".join(phenotype)
-
-def load_grid_data(file_list, length = 9):
-    """
-    Helper function to load data from multiple grid_task files. Filename
-    indicates file to read from and mode (either "species" or "nTasks")
-    indicates how to formulate the data.
-    """
-
-    #Chceck if individual file name needs to be converted to list
-    try:
-        file_list[0] = file_list[0]
-    except:
-        file_list = [file_list]
-
-    #Get dimensions of world
-    infile = open(file_list[0])
-    lines = infile.readlines()
-    infile.close()
-    world_x = len(lines[0].split())
-    world_y = len(lines)
-
-    data = []
-    for i in range(world_y):
-        data.append([])
-        for j in range(world_x):
-            data[i].append([])
-
-    for f in file_list:
-        infile = open(f)
-        lines = infile.readlines()
-        for i in range(world_y):
-            lines[i] = lines[i].split()
-            for j in range(world_x):
-                val = bin(int(lines[i][j]))
-                while len(val) < length+2:
-                    val = "0b0" + val[2:]
-                data[i][j].append(val)
-        infile.close()
-
-    return data
-
-
-
-def agg_niche_grid(grid, agg=len):
-    """
-    agg - A function indicating how to summarize niches. This function must
-        take a set indicating the resources present in a cell as input.
-        Default: len (indicates number od resources present in each cell)
-    """
-
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
-            grid[i][j] = agg(grid[i][j])
-
-    return grid
-
-def make_niche_grid(res_list, anchors, size, world_size=60, square=False):
-    """
-    Helper function for spatial heterogeneity calculations
-
-    anchors - a list of points (tuples or lists specifying an x and y
-        coordinate as ints) indicating the location of patches:
-              Center for circles, upper left for squares
-    size - int specifying radius of circle, or side length of square, or list
-           of ints specifying the radius or side length of all patches
-    world_size - an int indicating the length of one side of the world.
-           Defualt = 60, because that's the default Avida world size
-    square - boolean indicating whether resources are square (the assumed
-        alternative is circular resources)
-
-    Returns a list of lists of sets indicating the set of resources
-    available at each x,y location in the Avida grid.
-    """
-    try:
-        size[0]
-    except:
-        size = [size for i in range(len(anchors))]
-
-    #Reduce resource names to tasks being rewarded
-    for i in range(len(res_list)):
-        res_list[i] = res_list[i][3:].lower()
-        while res_list[i][-1].isdigit():
-            res_list[i] = res_list[i][:-1]
-
-    world = []
-    for i in range(world_size):
-        world.append([])
-        for j in range(world_size):
-            world[i].append(set())
-
-    #Fill in data on niches present in each cell of the world
-
-    #Handle case in which resource patches are square
-    if square:
-        for a in range(len(anchors)):
-            for i in range(anchors[a][0], anchors[a][0]+size[a]):
-                for j in range(anchors[a][1], anchors[a][1]+size[a]):
-                    world[j][i].add(res_list[a])
-
-    #Handle case in which resource patches are circular
-    else:
-        for i in range(world_size):
-            for j in range(world_size):
-                for k in range(len(anchors)):
-                    if (dist((j,i), anchors[k])) <= size[k]-1:
-                        world[i][j].add(res_list[k])
-    return world
-
-def parse_environment_file_list(names, world_size=60):
-
-    #Convert single file to list if necessary
-    try:
-        names[0] = names[0]
-    except:
-        names = [names]
-
-    envs = {}
-    for name in names:
-        envs[name] = parse_environment_file(name, world_size)
-
-    return envs
-
-def parse_environment_file(filename, world_size=60):
-    infile = open(filename)
-    lines = infile.readlines()
-    infile.close()
-
-    circles = []
-    cells = []
-    for line in lines:
-        if line.startswith("GRADIENT_RESOURCE"):
-            circles.append(parse_gradient(line))
-        if line.startswith("CELL"):
-            new_cell = parse_cell(line, world_size, world_size)
-            if not new_cell is None:
-                cells.append(new_cell)
-            
-    res_list = [c[0] for c in circles]
-    rads = [c[1] for c in circles]
-    anchors = [c[2] for c in circles]
-    square = False
-
-    if len(circles) == 0:
-        square = True
-        rads = 1
-        for i in range(len(cells)):
-            res_list += [cells[i][0] for c in cells[i][1]]
-            anchors += [c for c in cells[i][1]]
-
-    return make_niche_grid(res_list, anchors, rads, world_size, square)
-
-
-def parse_gradient(line):
-    #remove "GRADIENT_RESOURCE"
-    line = line[18:]
-
-    sline = line.split(":")
-    name = sline[0]
-    radius = None
-    x = None
-    y = None
-
-    for item in sline:
-        if item.startswith("height"):
-            radius = int(item.split("=")[1])
-        elif item.startswith("peakx"):
-            x = int(item.split("=")[1])
-        elif item.startswith("peaky"):
-            y = int(item.split("=")[1])
-
-    return (name, radius, (x,y))
-
-def parse_cell(line, world_x, world_y):
-    line = line[4:]
-
-    sline = [i.strip() for i in line.split(":")]
-    name = sline[0]
-    cells = sline[1].split(",")
-    
-    for i in range(len(cells)):
-        if ".." in cells[i]:
-            cell_range = cells[i].split("..")
-            cells[i] = cell_range[-1]
-            for j in range(int(cell_range[0]), int(cell_range[1])):
-                cells.append(j)
-
-    if cells == [""]:
-        return None
-    return (name, [(int(c)%world_x, int(c)/world_y) for c in cells])
-
-    
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~DATA HANDLING CLASSES~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-class Patch():
-    def __init__(self, cells, resources):
-        self.cells = cells
-        self.resources = resources
 
 
 if __name__ == "__main__":
