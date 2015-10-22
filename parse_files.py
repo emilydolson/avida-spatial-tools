@@ -2,6 +2,7 @@
 #data output files.
 
 from utils import *
+from copy import deepcopy
 
 def load_grid_data(file_list, length = 9):
     """
@@ -66,12 +67,23 @@ def load_grid_data(file_list, length = 9):
 
     return data
 
-def agg_niche_grid(grid, agg=len):
+def agg_grid(grid, agg=len):
     """
-    agg - A function indicating how to summarize niches. This function must
-        take a set indicating the resources present in a cell as input.
-        Default: len (indicates number of resources present in each cell)
+    Many functions return a 2d list with a complex data type in each cell.
+    For instance, grids representing environments have a set of resources, while
+    reading in multiple data files at once will yield a list containing the
+    values for that cell from each file. In order to visualize these data types
+    it is helpful to summarize the more complex data types with a single number.
+    For instance, you might want to take the length of a resource set to see how
+    many resource types are present. Alternately, you might want to take the
+    mode of a list to see the most common phenotype in a cell. 
+
+    This function facilitates this analysis by calling the given aggregation
+    function (agg) on each cell of the given grid and returning the result.
+
+    agg - A function indicating how to summarize grid contents. Default: len.
     """
+    grid = deepcopy(grid)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):

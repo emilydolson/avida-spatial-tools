@@ -48,26 +48,6 @@ def main():
 
 #~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def mode(ls):
-    """
-    Takes a list as an argument and returns the mode of (most common item in)
-    that list.
-    """
-    return max(set(ls), key=ls.count)
-
-def mean(ls):
-    """
-    Takes a list and returns the mean.
-    """
-    return float(sum(ls))/len(ls)
-
-def median(ls):
-    """
-    Takes a list and returns the median.
-    """
-    ls.sort()
-    return ls[int(floor(len(ls)/2.0))]
-
 def cluster(grid, n, ranks=None):
     grid = deepcopy(grid)
     phenotypes = [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
@@ -144,15 +124,7 @@ def rank_types(types):
 
     return ranks
 
-def string_agg(strings):
-    avg = ""
-    for i in(range(len(strings[0]))):
-        opts = []
-        for s in strings:
-            opts.append(s[i])
-        avg += max(set(opts), key=opts.count)
 
-    return avg
 
 
 #~~~~~~~~~~~~~~~~~~~~VISUALIZATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -352,7 +324,7 @@ def test_paired_environment_phenotype_grid():
 
 def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
 
-    phen_grid = agg_niche_grid(load_grid_data(species_files), agg)
+    phen_grid = agg_grid(load_grid_data(species_files), agg)
     world_size = len(phen_grid)
     world_dict = parse_environment_file_list(env_files, world_size)
     seed = world_dict.keys()[0]
@@ -376,7 +348,7 @@ def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
 
 def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode, name=""):
     plt.gcf().set_size_inches(40,40)
-    phen_grid = agg_niche_grid(load_grid_data(species_files), agg)
+    phen_grid = agg_grid(load_grid_data(species_files), agg)
     world_size = len(phen_grid)
     world_dict = parse_environment_file_list(env_files, world_size)
     seed = world_dict.keys()[0]
@@ -424,7 +396,7 @@ def make_species_grid(file_list, agg=mode, name="speciesgrid"):
     Makes a heat map of the most common phenotypes (by phenotype) in each
     cell in specified in file (string).
     """
-    data = agg_niche_grid(load_grid_data(file_list), agg)
+    data = agg_grid(load_grid_data(file_list), agg)
     data, k = cluster(data, 27)
     grid = color_grid(data, False, k, True)
     #grid = color_by_phenotype(data, 9.0, True)
@@ -759,23 +731,18 @@ def convert_to_pysal(data):
     data = np.reshape(data, (len(data)*len(data[0]), 1))
     return w, data
 
-def calc_environment_entropy(res_list, anchors, rad, world_size = 60, exclude_desert=False):
+def calc_environment_entropy(res_dict, world_size = (60,60), exclude_desert=False):
     """
     Calculate the Shannon entropy of a given environment, treating each niche
     (where niches are defined by regions in which different sets of resources
     are rewarded) as a category. The environment is specified with the
     following inputs:
 
-    res_list - a list of strings of resource names. These names are expected to
-          start with the letters "res" and end with numbers differentiating
-          different copies of the same task. The middle characters denote the
-          task being rewarded. For example, the first AND resource would be
-          called resAND0.
+    res_dict - a dictionary in which keys are resources in the environment
+    and values are list of tuples representing the cells they're in.
 
-    anchors - a list of tuples of ints denoting x,y anchor points in the world
-          for each resource.
-
-    rad - an int indicating the radius of the resource patches in the world.
+    world_size - a tuple indicating the dimensions of the world.
+           Default = 60x60, because that's the default Avida world siz
 
     excludeDesert - an optional argument which defaults to False. If True is
           specific, niches in which no tasks are rewarded
@@ -783,7 +750,7 @@ def calc_environment_entropy(res_list, anchors, rad, world_size = 60, exclude_de
     """
 
     #Initialize list of list of sets to record which niches are where
-    world = make_niche_grid(res_list, anchors, rad, world_size)
+    world = make_niche_grid(res_dict, world_size)
 
     niches = make_niche_dictionary(world, world_size)
 
@@ -838,8 +805,8 @@ def sqrt_shannon_entropy(filename):
 #~~~~~~~~~~~~~~~~~~~~~~~METRIC CALCULATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~#
 
 
-def patch_richness(res_list, anchors, rad, world_size=60):
-    world = make_niche_grid(res_list, anchors, rad, world_size)
+def patch_richness(res_dict, world_size=60):
+    world = make_niche_grid(res_dict, world_size)
     niches = {}
     for i in range(world_size):
         for j in range(world_size):
@@ -866,8 +833,8 @@ def entropy(dictionary):
         entropy += dictionary[key]/total * log(1.0/(dictionary[key]/total), 2)
     return entropy
 
-def find_edges(res_list, anchors, rad, world_size=60):
-    world = make_niche_grid(res_list, anchors, rad, world_size)
+def find_edges(res_dict, world_size=60):
+    world = make_niche_grid(res_dict, anchors, rad, world_size)
     edge_count = 0
     for i in range(world_size):
         for j in range(world_size):
