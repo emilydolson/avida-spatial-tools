@@ -135,9 +135,14 @@ def related_circumscribing_circle(patch, formula=True):
     #precise
 
     circle_area = 0.0
+    x_floor = int(floor(center[0]-radius))
+    x_ceil = int(ceil(center[0]+radius)+1)
 
-    for x in range(int(floor(center[0]-radius)), int(ceil(center[0]+radius))+1):
-        for y in range(int(floor(center[1]-radius)), int(ceil(center[1]+radius))+1):
+    y_floor = int(floor(center[1]-radius))
+    y_ceil = int(ceil(center[1]+radius)+1)
+
+    for x in range(x_floor, x_ceil):
+        for y in range(y_floor, y_ceil):
             if dist((x,y),center) <= radius:
                 circle_area += 1
 
