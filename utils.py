@@ -85,7 +85,7 @@ def get_world_dimensions(gridfile):
     This function takes the name of a file in grid_task format and returns
     the dimensions of the world it represents.
     """
-    infile = open(file_list[0])
+    infile = open(gridfile)
     lines = infile.readlines()
     infile.close()
     world_x = len(lines[0].split())
