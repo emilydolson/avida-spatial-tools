@@ -13,13 +13,9 @@ from matplotlib import animation
 from matplotlib.collections import PatchCollection
 from pysal.esda.getisord import G_Local
 from utils import *
-
-try:
-    import matplotlib
-    from matplotlib import pyplot as plt
-except:
-    print "Matplotlib import failed"
-    print "AvidaSpatialTools is running in HPCC Compatability Mode"
+from matplotlib import pyplot as plt
+import matplotlib
+from parse_files import *
 
 RES_SET = ["safe"]
 #RES_SET = ["not", "nand", "and", "orn", "or", "andn", "nor", "xor", "equ"]
@@ -91,7 +87,7 @@ def cluster_types(types, max_clust=12):
 
     cluster_ranks = dict.fromkeys(cluster_dict.keys())
     for key in cluster_dict:
-        cluster_ranks[key] = eval(string_agg(cluster_dict[key]))
+        cluster_ranks[key] = eval(string_avg(cluster_dict[key]))
 
     i = len(cluster_ranks)
     for key in sorted(cluster_ranks, key=cluster_ranks.get):
@@ -141,12 +137,9 @@ def make_n_tasks_grid(file_list, agg=mean):
     #TODO: Is "nTasks" option actually necessary?
     return color_grid(data, "nTasks")
 
-def test_optimal_phenotypes():
-    env = "/home/emily/repos/resource-heterogeneity/environmentFiles/env50047.cfg"
-    grid = "/home/emily/repos/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_50047/grid_task.100000.dat"
-    optimal_phenotypes(env, grid, 59)
 
-def optimal_phenotypes(env_file, grid_file, world_size=60, agg=mean):
+
+def optimal_phenotypes(env_file, grid_file, world_size=(60,60), agg=mean):
     world = parse_environment_file(env_file, world_size)
     phenotypes = load_grid_data([grid_file])
 
@@ -155,8 +148,6 @@ def optimal_phenotypes(env_file, grid_file, world_size=60, agg=mean):
             for k in range(len(phenotypes[i][j])):
                 phenotype = phenotype_to_res_set(phenotypes[i][j][k])
                 diff = len(world[i][j].symmetric_difference(phenotype))
-                if "equ" in phenotype:
-                   diff -= 1
                 phenotypes[i][j][k] = diff
 
     phenotypes = agg_grid(phenotypes, agg)
@@ -311,12 +302,6 @@ def plot_world(world, k, types, p=None):
     if p != None:
         axes.add_collection(p)
 
-def test_paired_environment_phenotype_grid():
-    env = "/media/emily/hdd/resource-heterogeneity/environmentFiles/env11097.cfg"
-    grid = "/media/emily/hdd/resource-heterogeneity/experiment/inflow100_radius24_commonresources/heterogeneity_replication_11097/grid_task.100000.dat"
-    #grid = "/home/emily/repos/resource-heterogeneity/experiment/randomized_entropy/heterogeneity_replication_31204/grid_task.100000.dat"
-    paired_environment_phenotype_grid_circles(grid, env)
-
 def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
 
     phen_grid = agg_grid(load_grid_data(species_files), agg)
@@ -344,7 +329,7 @@ def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
 def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode, name=""):
     plt.gcf().set_size_inches(40,40)
     phen_grid = agg_grid(load_grid_data(species_files), agg)
-    world_size = len(phen_grid)
+    world_size = (len(phen_grid[0]), len(phen_grid))
     world_dict = parse_environment_file_list(env_files, world_size)
     seed = world_dict.keys()[0]
     world = world_dict[seed]
@@ -356,8 +341,8 @@ def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode
     #niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
     #niches = [res_set_to_phenotype(i) for i in niches]
 
-    for i in range(world_size):
-        for j in range(world_size):
+    for i in range(world_size[1]):
+        for j in range(world_size[0]):
             world[i][j] = res_set_to_phenotype(world[i][j])
 
     #types = set(niches)
@@ -377,14 +362,10 @@ def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode
     plot_phens_circles(phen_grid)
 
     if name == "":
-        plt.savefig("phenotype_niches_"+str(seed), dpi=2000)
+        plt.savefig("phenotype_niches_"+str(seed), dpi=500)
     else:
-        plt.savefig("phenotype_niches_"+name, dpi=2000)
+        plt.savefig("phenotype_niches_"+name, dpi=500)
     return plt.gcf()
-
-def test_make_species_grid():
-    grid = "/home/emily/repos/resource-heterogeneity/experiment/radius8_distance12_common/heterogeneity_replication_11857/grid_task.100000.dat"
-    make_species_grid(grid)
 
 def make_species_grid(file_list, agg=mode, name="speciesgrid"):
     """
@@ -393,11 +374,11 @@ def make_species_grid(file_list, agg=mode, name="speciesgrid"):
     """
     data = agg_grid(load_grid_data(file_list), agg)
     data, k = cluster(data, 27)
-    grid = color_grid(data, False, k, True)
+    grid = color_grid(data, k, True)
     #grid = color_by_phenotype(data, 9.0, True)
     return make_imshow_plot(grid, name)
 
-def color_grid(data, mode="", denom=9.0, mask_zeros = False):
+def color_grid(data, denom=9.0, mask_zeros = False):
     """
     Loads specified data into a grid to create a heat map of phenotypic
     complexity and location.
@@ -407,9 +388,6 @@ def color_grid(data, mode="", denom=9.0, mask_zeros = False):
         grid.append([])
         for col in range(len(data[row])):
             arr = np.zeros((1,1,3))
-            if mode == "nTasks":
-                data[row][col] = n_tasks(data[row][col])
-            #print data[row][col]
             
             if float(data[row][col]) > 0:
                 arr[0,0,0] = (float(data[row][col])/denom)
@@ -497,11 +475,8 @@ def color_percentages2(file_list):
     make_imshow_plot(grid, "colorpercentages2")
     return grid
 
-def test_color_percentages():
-    file_list = glob.glob("/home/emily/repos/resource-heterogeneity/experiment/randomAnchors/*/grid_task.100000.dat")[3:4]
-    color_percentages2(file_list)
 
-def visualize_environment(filename, world_size=60, outfile=""):
+def visualize_environment(filename, world_size=(60,60), outfile=""):
     world = parse_environment_file_list(filename, world_size)
     seeds = world.keys()
     niches = []
@@ -533,18 +508,13 @@ def visualize_environment(filename, world_size=60, outfile=""):
 
     return grid
 
-def test_visualize_environment():
-    #env = ["distance0", "distance10", "distance21", "distance29"]
-    env = ["/media/emily/hdd/resource-heterogeneity/environmentFiles/env50012.cfg", "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50013.cfg"]#, "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50014.cfg", "/media/emily/hdd/resource-heterogeneity/environmentFiles/env50015.cfg"]
-    #grid = "/home/emily/repos/resource-heterogeneity/experiment/radius8_distance12_common/heterogeneity_replication_11857/grid_task.100000.dat"
-    grid = visualize_environment(env, 59, "test_env.png")
 
 def make_imshow_plot(grid, name):
   plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
   plt.imshow(grid, interpolation="none", aspect=1)
   plt.tight_layout()
-  plt.savefig(name, dpi=1000, bbox_inches="tight")
+  plt.savefig(name, dpi=500, bbox_inches="tight")
 
 def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
     """
@@ -597,8 +567,8 @@ def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
 
     return grid
 
-#~~~~~~~~~~~~~~~~~~~~~~LANSCAPE-LEVEL CALCULATIONS~~~~~~~~~~~~~~~~~~~~~~#
 
+"""
 #NOT WORKING YET
 def compute_diversity_gradient_snazzy_gaussian(world, sd=5, recursive=False):
     world_x = len(world[0])
@@ -645,7 +615,7 @@ def compute_diversity_gradient_snazzy_gaussian(world, sd=5, recursive=False):
     if not recursive:
         plt.imshow(entropies, interpolation="none", cmap="jet")
         plt.show()
-
+"""
 
 def compute_diversity_gradient(world, grain=None, recursive=False):
     world_x = len(world[0])
@@ -720,11 +690,15 @@ def getis_ord(data):
     #plt.imshow()
     plt.show()
 
-def task_percentages(data):
+def task_percentages(data, n_tasks=9):
+    """
+    Calculates the percentage of organisms in each cell (across multiple files)
+    that were doing a given task.
+    """
     pdata = deepcopy(data)
     for i in range(len(data[0])):
         for j in range(len(data)):
-            percentages = [0.0]*9
+            percentages = [0.0]*n_tasks
             for k in range(len(data[i][j])):
                 for l in range(2, len(data[i][j][k])):
                     percentages[l-2] += int(data[i][j][k][l])
