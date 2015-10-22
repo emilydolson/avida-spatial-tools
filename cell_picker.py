@@ -106,23 +106,19 @@ class cell_picker():
         x_range = [self.begin_drag.x//self.col_width, event.x//self.col_width]
         y_range = [self.begin_drag.y//self.row_height, event.y//self.row_height]
 
+        #Check bounds
         for i in range(2):
-            if x_range[i] < 0:
-                x_range[i] = 0
-            if y_range[i] < 0:
-                y_range[i] = 0
-            if x_range[i] >= self.rows:
-                    x_range[i] = self.rows-1
-            if y_range[i] >= self.rows:
-                    y_range[i] = self.rows-1
-        
-        print x_range, y_range
+            for ls in [x_range, y_range]
+            if ls[i] < 0:
+                ls[i] = 0
+            if ls[i] >= self.rows:
+                    ls[i] = self.rows-1
+            
         for x in range(min(x_range), max(x_range)+1):
             for y in range(min(y_range), max(y_range)+1):
                 if x == self.begin_drag.x//self.col_width and \
                    y == self.begin_drag.y//self.row_height:
                     continue
-                print x, y
                 self.color_square(x*self.col_width, y*self.row_height)
         self.begin_drag = None
 
