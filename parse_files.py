@@ -34,27 +34,18 @@ def load_grid_data(file_list, length = 9):
     except:
         file_list = [file_list]
 
-    #Get dimensions of world
-    infile = open(file_list[0])
-    lines = infile.readlines()
-    infile.close()
-    world_x = len(lines[0].split())
-    world_y = len(lines)
+    world_size = get_world_dimensions(file_list[0])
 
     #Initialize empty data array
-    data = []
-    for i in range(world_y):
-        data.append([])
-        for j in range(world_x):
-            data[i].append([])
+    data = initialize_grid(world_size, [])
 
     #Loop through file list, reading in data
     for f in file_list:
         infile = open(f)
         lines = infile.readlines()
-        for i in range(world_y):
+        for i in range(world_size[1]):
             lines[i] = lines[i].split()
-            for j in range(world_x):
+            for j in range(world_size[0]):
                 val = bin(int(lines[i][j]))
                 neg = val.find("-") > - 1
                 while len(val) < length + 2 + neg:
@@ -107,11 +98,7 @@ def make_niche_grid(res_dict, world_size=(60,60)):
     """
 
     #Initialize array to represent world
-    world = []
-    for i in range(world_size[1]):
-        world.append([])
-        for j in range(world_size[0]):
-            world[i].append(set())
+    world = initialize_grid(world_size, set())
 
     #Fill in data on niches present in each cell of the world
     for res in res_dict:

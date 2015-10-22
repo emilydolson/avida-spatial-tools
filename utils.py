@@ -1,6 +1,7 @@
 #This file contains functions that are used throuhgout avida-spatial-tools
 
 from math import sqrt
+from copy import deepcopy
 
 
 def dict_increment(d, key, amount):
@@ -78,3 +79,28 @@ def string_avg(strings):
         avg += max(set(opts), key=opts.count)
 
     return avg
+
+def get_world_dimensions(gridfile):
+    """
+    This function takes the name of a file in grid_task format and returns
+    the dimensions of the world it represents.
+    """
+    infile = open(file_list[0])
+    lines = infile.readlines()
+    infile.close()
+    world_x = len(lines[0].split())
+    world_y = len(lines)
+    return (world_x, world_y)
+
+def initialize_grid(world_size, inner):
+    """
+    Creates an empty grid (2d list) with the dimensions specified in
+    world_size. Each element is initialized to the inner argument.
+    """
+    data = []
+
+    for i in range(world_size[1]):
+        data.append([])
+        for j in range(world_size[0]):
+            data[i].append(deepcopy(inner))
+    return data
