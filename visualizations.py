@@ -18,70 +18,89 @@ import matplotlib
 from parse_files import *
 
 #RES_SET = ["safe"]
-RES_SET = ["not", "nand", "and", "orn", "or", "andn", "nor", "xor", "equ"]
+RES_SET = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]
 
 hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [0, .075, .175, .2, .425, .575, .01, .5]
 #random.shuffle(hues)
 
-#~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def assign_ranks_by_cluster(grid, n, ranks=None):
+    if ranks is None:
+        ranks = generate_ranks(grid, n)
+    return assign_ranks_to_grid(grid, ranks), len(ranks)
 
-def cluster(grid, n, ranks=None):
-    grid = deepcopy(grid)
-    phenotypes = [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
-
+def generate_ranks(grid, n):
+    phenotypes = deepcopy(grid)
+    if type(phenotypes) is list and type(phenotypes[0]) is list:
+        phenotypes = flatten_array(phenotypes)
+    
     #check if conversion to phenotype is necessary
     try:
-        if phenotypes[0][:2] == "0b":
-            pass
-        else:
-            phenotypes = [res_set_to_phenotype(i, RES_SET) for i in phenotypes]
+        int(phenotypes[0], 2)
     except:
         phenotypes = [res_set_to_phenotype(i, RES_SET) for i in phenotypes]
+        
+    #Remove duplicates from types
+    types = list(frozenset(phenotypes))
+    if len(types) < n:
+        ranks = rank_types(types)
+    else:
+        ranks = cluster_types(types, n)
+    
+    return ranks
 
+
+def assign_ranks_to_grid(grid, ranks):
     assignments = deepcopy(grid)
+    
+    #Convert to binary numbers if needed
+    try:
+        int(grid[0][0], 2)
+    except:
+        grid = agg_grid(deepcopy(grid), res_set_to_phenotype)
 
-    if ranks == None:
-        #Remove duplicates from types
-        types = list(frozenset(phenotypes))
-        if len(types) < n:
-            ranks = rank_types(types)
-        else:
-            ranks = cluster_types(types, n)
-
-    print '0b101000000' in phenotypes
-    ranks["0b000000000"] = 0
     ranks["0b0"] = 0
-    ranks["0b1"] = -1
+    ranks["-0b1"] = -1
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            assignments[i][j] = ranks[phenotypes[i*len(grid[i])+j]]
+            assignments[i][j] = ranks[grid[i][j]]
 
-    return assignments, len(ranks.keys())
+    return assignments
 
-def cluster_types(types, max_clust=12):
-
-    ls = [list(t[2:]) for t in types]
+def prepend_zeros_to_lists(ls):
     longest = max([len(l) for l in ls])
 
     for i in range(len(ls)):
         while len(ls[i]) < longest:
             ls[i].insert(0, "0")
 
+
+def cluster_types(types, max_clust=12):
+    """
+    Generates a dictionary mapping each binary number in types to an integer
+    from 0 to max_clust. Hierarchical clustering is used to determine which
+    which binary numbers should map to the same integer.
+    """
+    
+    #Fill in leading zeros to make all numbers same length.
+    ls = [list(t[2:]) for t in types]
+    prepend_zeros_to_lists(ls)
+
+    #Do actual clustering
     dist_matrix = pdist(ls, weighted_hamming)
     clusters = hierarchicalcluster.complete(dist_matrix)
-    #hierarchicalcluster.dendrogram(clusters)
-    #plt.show()
     if len(types) < max_clust:
         max_clust = len(types)
-    clusters = hierarchicalcluster.fcluster(clusters, max_clust, criterion="maxclust")
-    #print clusters
-    
+    clusters = hierarchicalcluster.fcluster(clusters, max_clust, \
+                                            criterion="maxclust")
+
+    #Group members of each cluster together
     cluster_dict = dict((c, []) for c in set(clusters))
     for i in range(len(types)):
         cluster_dict[clusters[i]].append(types[i])
 
+    #Figure out the relative rank of each cluster
     cluster_ranks = dict.fromkeys(cluster_dict.keys())
     for key in cluster_dict:
         cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
@@ -91,19 +110,23 @@ def cluster_types(types, max_clust=12):
         cluster_ranks[key] = i
         i -= 1
 
+    #Create a dictionary mapping binary numbers to indices
     ranks = {}
     for key in cluster_dict:
         for typ in cluster_dict[key]:
             ranks[typ] = cluster_ranks[key]
    
-
     return ranks
 
 def rank_types(types):
+    """
+    Takes a list of binary numbers and returns a dictionary mapping each
+    binary number to an integer indicating it's rank within the list.
+    """
     include_null = '0b0' in types
     sorted_types = deepcopy(types)
     for i in range(len(sorted_types)):
-        sorted_types[i] = eval(sorted_types[i])
+        sorted_types[i] = int(sorted_types[i], 2)
     sorted_types.sort()
 
     ranks = {}
@@ -193,8 +216,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     seed = seed.strip("abcdefghijklmnopqrstuvwxyzF/_-")#TODO: Allow non-digit ID
 
     #Create list of all niches and all phenotypes, in phenotype format
-    niches = [world[i][j] for i in range(len(world)) \
-              for j in range(len(world[i]))]
+    niches = flatten_array(world)
     
     niches = [res_set_to_phenotype(i, res_list) for i in niches]
     phenotypes = [phen for col in data for row in col for phen in row]
@@ -205,14 +227,12 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     else:
         types = set(phenotypes)
 
-    types.discard("-0b000000001") #We'll handle this specially
-    types.discard("-0b000000000") #We'll handle this specially
+    types.discard("-0b1") #We'll handle this specially
+    types.discard("0b0") #We'll handle this specially
 
     #Do all clustering ahead of time so colors remain consistent.
-    types = cluster_types(list(types), k)
-    types["-0b000000001"] = -1 # The empty phenotype/niche should always be rank 0
+    types = generate_ranks(list(types), k)
     types["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
-    types["0b000000000"] = 0 # The empty phenotype/niche should always be rank 0
     types["0b0"] = 0 # The empty phenotype/niche should always be rank 0
 
     #So we don't have to keep initializig new arrays or screw up original data
@@ -253,11 +273,14 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     return anim
 
 def plot_phens(phen_grid, k, types):
-    grid = color_grid(cluster(phen_grid, k, types)[0], k+1, True)
+    
+    assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
+    grid = color_grid(assignments, k+1, True)
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if grid[i][j] != [0,0,0]:
-                plt.gca().add_patch(plt.Circle((j,i), radius=.3, lw=1, ec="black", facecolor=grid[i][j]))
+                plt.gca().add_patch(plt.Circle((j,i), \
+                            radius=.3, lw=1, ec="black", facecolor=grid[i][j]))
 
 def plot_phens_circles(phen_grid):
     grid = phen_grid
@@ -277,7 +300,9 @@ def plot_phens_circles(phen_grid):
                         first = False
 
 def plot_phens_blits(phen_grid, k, types, patches):
-    grid = color_grid(cluster(phen_grid, k, types)[0], False, k+1, True)
+
+    assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
+    grid = color_grid(assignments, False, k+1, True)
     
     for i in range(len(phen_grid)):
         for j in range(len(phen_grid[i])):
@@ -289,7 +314,8 @@ def plot_phens_blits(phen_grid, k, types, patches):
     return patches
 
 def plot_world(world, k, types, p=None):
-    world = color_grid(cluster(world, k, types)[0], k+1, True)
+    assignments, n = assign_ranks_by_cluster(world, k, types)
+    world = color_grid(assignments, k+1, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -309,23 +335,16 @@ def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
     world = world_dict[seed]
     seed = seed.strip("abcdefghijklmnopqrstuvwxyzF/_-")
 
-    phenotypes = [phen_grid[i][j] for i in range(len(phen_grid)) for j in range(len(phen_grid[i]))]
+    phenotypes = flatten_array(phen_grid)
     niches = deepcopy(world)
-    niches = [niches[i][j] for i in range(len(niches)) for j in range(len(niches[i]))]
+    niches = flatten_array(niches)
     niches = [res_set_to_phenotype(i, RES_SET) for i in niches]
 
-
-    print len(niches)
-    print world_size
-    print world_size[0]*world_size[1]
-    print len(phenotypes)
-    print '0b101000000' in niches
-
     types = set(phenotypes+niches)
-    types.discard("0b000000000")
+    types.discard("0b0")
     k = 25
-    types = cluster_types(list(types), k)
-    types["0b000000000"] = 0
+    types = generate_ranks(list(types), k)
+    types["0b0"] = 0
 
     plot_world(world, len(types.keys()), types)
     plot_phens(phen_grid, len(types.keys()), types)
@@ -379,7 +398,7 @@ def make_species_grid(file_list, agg=mode, name="speciesgrid"):
     cell in specified in file (string).
     """
     data = agg_grid(load_grid_data(file_list), agg)
-    data, k = cluster(data, 27)
+    data, k = assign_ranks_by_cluster(data, 27)
     grid = color_grid(data, k, True)
     #grid = color_by_phenotype(data, 9.0, True)
     return make_imshow_plot(grid, name)
@@ -491,15 +510,15 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
         niches += [res_set_to_phenotype(i) for i in temp_niches]
 
     types = set(niches)
-    types.discard("0b000000000")
+    types.discard("0b0")
     k = 30
     two_color = False
     if len(types) > 1:
-        types = cluster_types(list(types), k)
+        types = generate_ranks(list(types), k)
     else:
         types = {list(types)[0]:1}
         two_color = True
-    types["0b000000000"] = 0
+    types["0b0"] = 0
     
     for seed in seeds:
         #grid, d = cluster(world[seed], len(types), types)

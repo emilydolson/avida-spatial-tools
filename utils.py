@@ -5,6 +5,9 @@ from copy import deepcopy
 import pysal
 import numpy as np
 
+def flatten_array(grid):
+    return [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
+
 def dict_increment(d, key, amount):
     if key in d:
         d[key] += amount
