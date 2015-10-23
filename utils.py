@@ -20,11 +20,15 @@ def dist(p1, p2):
     """
     return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
+def function_with_args(func, *args):
+    def inner(arg):
+        return func(arg, *args)
+    return inner
+
 def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
 
     assert(phenotype[0:2] == "0b")
     phenotype = phenotype[2:]
-
     #Fill in leading zeroes
     while len(phenotype) < len(resources):
         phenotype = "0" + phenotype
@@ -34,23 +38,24 @@ def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "o
     for i in range(len(phenotype)):
         if phenotype[i] == "1":
             res_set.add(resources[i])
-
+    
     assert(phenotype.count("1") == len(res_set))
     return res_set
 
 def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
 
     phenotype = len(full_list) * ["0"]
+
     for i in range(len(full_list)):
         if full_list[i] in res_set:
             phenotype[i] = "1"
+   
     assert(phenotype.count("1") == len(res_set))
     
     #Remove uneceesary leading 0s
-    while phenotype[0] == "0":
+    while phenotype[0] == "0" and len(phenotype) > 1:
         phenotype = phenotype[1:]
     
-
     return "0b"+"".join(phenotype)
 
 

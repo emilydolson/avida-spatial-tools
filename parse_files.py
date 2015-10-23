@@ -3,6 +3,7 @@
 
 from utils import *
 from copy import deepcopy
+from environment_file import EnvironmentFile
 
 def load_grid_data(file_list, length = 9):
     """
@@ -128,9 +129,9 @@ def parse_environment_file_list(names, world_size=(60,60)):
     except:
         names = [names]
 
-    envs = {}
+    envs = []
     for name in names:
-        envs[name] = parse_environment_file(name, world_size)
+        envs.append(parse_environment_file(name, world_size))
 
     return envs
 
@@ -179,7 +180,9 @@ def parse_environment_file(filename, world_size=(60,60)):
         dict_increment(res_dict, name, cells)
             
     #Create a map of niches across the environment and return it
-    return make_niche_grid(res_dict, world_size)
+    grid = make_niche_grid(res_dict, world_size)    
+
+    return EnvironmentFile(grid, res_dict.keys(), world_size, filename)
 
 def parse_gradient(line, world_size):
     """
@@ -248,4 +251,3 @@ def parse_cell(line, world_size):
     xy_pairs = [(int(c)%world_size[0], int(c)//world_size[0]) for c in cells]
 
     return (name, xy_pairs)
-

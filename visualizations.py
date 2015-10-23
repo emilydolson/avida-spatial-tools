@@ -35,12 +35,6 @@ def generate_ranks(grid, n):
     if type(phenotypes) is list and type(phenotypes[0]) is list:
         phenotypes = flatten_array(phenotypes)
     
-    #check if conversion to phenotype is necessary
-    try:
-        int(phenotypes[0], 2)
-    except:
-        phenotypes = [res_set_to_phenotype(i, RES_SET) for i in phenotypes]
-        
     #Remove duplicates from types
     types = list(frozenset(phenotypes))
     if len(types) < n:
@@ -53,13 +47,6 @@ def generate_ranks(grid, n):
 
 def assign_ranks_to_grid(grid, ranks):
     assignments = deepcopy(grid)
-    
-    #Convert to binary numbers if needed
-    try:
-        int(grid[0][0], 2)
-    except:
-        grid = agg_grid(deepcopy(grid), res_set_to_phenotype)
-
     ranks["0b0"] = 0
     ranks["-0b1"] = -1
     for i in range(len(grid)):
@@ -160,12 +147,15 @@ def make_n_tasks_grid(file_list, agg=mean):
 
 
 
-def optimal_phenotypes(env_file, grid_file, world_size=(60,60), agg=mean):
-    world = parse_environment_file(env_file, world_size)
-    phenotypes = load_grid_data([grid_file])
+def optimal_phenotypes(env_file, grid_file, agg=mean):
 
-    for i in range(len(world)):
-        for j in range(len(world)):
+    phenotypes = load_grid_data([grid_file])
+    world_size = (len(phenotypes[0]), len(phenotypes))
+    world = parse_environment_file(env_file, world_size)
+
+
+    for i in range(world_size[1]):
+        for j in range(world_size[0]):
             for k in range(len(phenotypes[i][j])):
                 phenotype = phenotype_to_res_set(phenotypes[i][j][k])
                 diff = len(world[i][j].symmetric_difference(phenotype))
@@ -209,23 +199,17 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     
     #load data
     data = load_grid_data(species_files)
-    world_size = int(len(data)) #extract size from grid_tasks
-    world_dict = parse_environment_file_list(env_file, world_size)
-    seed = world_dict.keys()[0] #extract env file ID
-    world = world_dict[seed]
-    seed = seed.strip("abcdefghijklmnopqrstuvwxyzF/_-")#TODO: Allow non-digit ID
+    world_size = (len(data[0]), len(data)) #extract size from grid_tasks
+    world = parse_environment_file(env_file, world_size)
 
     #Create list of all niches and all phenotypes, in phenotype format
     niches = flatten_array(world)
     
-    niches = [res_set_to_phenotype(i, res_list) for i in niches]
+    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
     phenotypes = [phen for col in data for row in col for phen in row]
 
     #TODO: FIX THIS!
-    if res_list != ["safe"]:
-        types = set(phenotypes+niches)
-    else:
-        types = set(phenotypes)
+    types = set(phenotypes+niches)
 
     types.discard("-0b1") #We'll handle this specially
     types.discard("0b0") #We'll handle this specially
@@ -268,7 +252,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
 
     #Do actual animation
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(species_files), blit=True)
-    anim.save(str(seed) + "_phenotype_overlay.mp4", writer="mencoder", fps=2)
+    anim.save(world.name + "_phenotype_overlay.mp4", writer="mencoder", fps=2)
 
     return anim
 
@@ -302,7 +286,7 @@ def plot_phens_circles(phen_grid):
 def plot_phens_blits(phen_grid, k, types, patches):
 
     assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
-    grid = color_grid(assignments, False, k+1, True)
+    grid = color_grid(assignments, k+1, True)
     
     for i in range(len(phen_grid)):
         for j in range(len(phen_grid[i])):
@@ -314,7 +298,15 @@ def plot_phens_blits(phen_grid, k, types, patches):
     return patches
 
 def plot_world(world, k, types, p=None):
-    assignments, n = assign_ranks_by_cluster(world, k, types)
+
+    #Convert to binary numbers if needed
+    try:
+        int(world[0][0], 2)
+    except:
+        conversion_func = function_with_args(res_set_to_phenotype, world.resources)
+        grid = agg_grid(deepcopy(world), conversion_func)
+
+    assignments, n = assign_ranks_by_cluster(grid, k, types)
     world = color_grid(assignments, k+1, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
@@ -326,19 +318,16 @@ def plot_world(world, k, types, p=None):
     if p != None:
         axes.add_collection(p)
 
-def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
+def paired_environment_phenotype_grid(species_files, env_file, agg=mode):
 
     phen_grid = agg_grid(load_grid_data(species_files), agg)
     world_size = (len(phen_grid[0]), len(phen_grid))
-    world_dict = parse_environment_file_list(env_files, world_size)
-    seed = world_dict.keys()[0]
-    world = world_dict[seed]
-    seed = seed.strip("abcdefghijklmnopqrstuvwxyzF/_-")
+    world = parse_environment_file(env_file, world_size)
 
     phenotypes = flatten_array(phen_grid)
     niches = deepcopy(world)
     niches = flatten_array(niches)
-    niches = [res_set_to_phenotype(i, RES_SET) for i in niches]
+    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
 
     types = set(phenotypes+niches)
     types.discard("0b0")
@@ -349,45 +338,30 @@ def paired_environment_phenotype_grid(species_files, env_files, agg=mode):
     plot_world(world, len(types.keys()), types)
     plot_phens(phen_grid, len(types.keys()), types)
 
-    plt.savefig("phenotype_niches_"+str(seed), dpi=1000)
+    plt.savefig("phenotype_niches_"+world.name, dpi=1000)
 
 def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode, name=""):
     plt.gcf().set_size_inches(40,40)
     phen_grid = agg_grid(load_grid_data(species_files), agg)
     world_size = (len(phen_grid[0]), len(phen_grid))
-    world_dict = parse_environment_file_list(env_files, world_size)
-    seed = world_dict.keys()[0]
-    world = world_dict[seed]
-    seed = seed.strip(string.ascii_letters+"/_-")
-    #if seed.contains("/"):
-    #    seed = seed.split("/")[-1]
-
-    #phenotypes = [phen_grid[i][j] for i in range(len(phen_grid)) for j in range(len(phen_grid[i]))]
-    #niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
-    #niches = [res_set_to_phenotype(i) for i in niches]
+    world = parse_environment_file(env_files, world_size)
 
     for i in range(world_size[1]):
         for j in range(world_size[0]):
-            world[i][j] = res_set_to_phenotype(world[i][j])
-
-    #types = set(niches)
-    #types.discard("0b000000000")
-    #k = 25
-    #types = cluster_types(list(types), k)
-    #types["0b000000000"] = 0
+            world[i][j] = res_set_to_phenotype(world[i][j], world.resources)
 
     #plot_world(world, len(types.keys()), types)
-    world = color_by_phenotype(world, 9.0, True)
+    world_grid = color_by_phenotype(world, 9.0, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
-    plt.imshow(world, interpolation="none", hold=True)
+    plt.imshow(world_grid, interpolation="none", hold=True)
     #plt.show()
     axes = plt.gca()
     axes.autoscale(False)
     plot_phens_circles(phen_grid)
 
     if name == "":
-        plt.savefig("phenotype_niches_"+str(seed), dpi=500)
+        plt.savefig("phenotype_niches_"+world.name, dpi=500)
     else:
         plt.savefig("phenotype_niches_"+name, dpi=500)
     return plt.gcf()
@@ -490,8 +464,8 @@ def color_percentages2(file_list):
     for i in range(len(grid)):
         grid[i] = [[]]*len(data[0])
 
-    for i in range(len(data[0])):
-        for j in range(len(data)):
+    for i in range(len(data)):
+        for j in range(len(data[0])):
             r = sum(data[i][j][:3])/3.0
             g = sum(data[i][j][3:6])/3.0
             b = sum(data[i][j][6:])/3.0
@@ -502,12 +476,11 @@ def color_percentages2(file_list):
 
 
 def visualize_environment(filename, world_size=(60,60), outfile=""):
-    world = parse_environment_file_list(filename, world_size)
-    seeds = world.keys()
+    worlds = parse_environment_file_list(filename, world_size)
     niches = []
-    for seed in seeds:
-        temp_niches = [world[seed][i][j] for i in range(len(world[seed])) for j in range(len(world[seed][i]))]
-        niches += [res_set_to_phenotype(i) for i in temp_niches]
+    for world in worlds:
+        temp_niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
+        niches += [res_set_to_phenotype(i, world.resources) for i in temp_niches]
 
     types = set(niches)
     types.discard("0b0")
@@ -520,16 +493,16 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
         two_color = True
     types["0b0"] = 0
     
-    for seed in seeds:
+    for world in worlds:
         #grid, d = cluster(world[seed], len(types), types)
-        grid = world[seed]
+        grid = world.grid
         for i in range(len(grid)):
-             grid[i] = [res_set_to_phenotype(grid[i][j]) for j in range(len(grid[i]))]
+             grid[i] = [res_set_to_phenotype(grid[i][j], world.resources) for j in range(len(grid[i]))]
     
         grid = color_by_phenotype(grid,  9, True, two_color)
 
-        print "making plot", "niches_"+ (str(seed) if outfile == "" else outfile)
-        make_imshow_plot(grid, "niches_" + (str(seed) if outfile == "" else outfile))
+        print "making plot", "niches_"+ (world.name if outfile == "" else outfile)
+        make_imshow_plot(grid, "niches_" + (world.name if outfile == "" else outfile))
 
     return grid
 
@@ -552,7 +525,7 @@ def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
         grid.append([])
         for col in range(len(data[row])):
             arr = np.zeros((1,1,3))
-            if data[row][col] != "0b000000000":
+            if data[row][col] != "0b0":
                 locs = []
                 curr = 1
                 while curr >= 1 and curr < len(data[row][col]):
@@ -721,8 +694,8 @@ def task_percentages(data, n_tasks=9):
     that were doing a given task.
     """
     pdata = deepcopy(data)
-    for i in range(len(data[0])):
-        for j in range(len(data)):
+    for i in range(len(data)):
+        for j in range(len(data[0])):
             percentages = [0.0]*n_tasks
             for k in range(len(data[i][j])):
                 for l in range(2, len(data[i][j][k])):

@@ -2,7 +2,7 @@ from parse_files import *
 
 def test_parse_environment_file():
     env = parse_environment_file("test/example_environment.cfg", (4,6))
-    assert(env == [[set(['test', 'nor']), set(['test', 'nor']), \
+    assert(env.grid == [[set(['test', 'nor']), set(['test', 'nor']), \
                     set(['test', 'nor']), set(['test', 'nor'])],\
                    [set(['test', 'nor']), set(['nor']), set(['nor']), \
                     set([])], [set(['test', 'nor']), set(['nor']), \
