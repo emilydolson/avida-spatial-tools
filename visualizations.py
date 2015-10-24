@@ -293,11 +293,12 @@ def plot_phens_blits(phen_grid, k, types, patches):
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
+            curr_patch = patches[i * len(grid[i]) + j]
             if grid[i][j] == [0,0,0]:
-                patches[i * len(grid[i]) + j].set_visible(False)
+               curr_patch.set_visible(False)
             else:
-                patches[i*len(grid[i])+j].set_facecolor(grid[i][j])
-                patches[i*len(grid[i])+j].set_visible(True)
+                curr_patch.set_facecolor(grid[i][j])
+                curr_patch.set_visible(True)
 
     return patches
 
