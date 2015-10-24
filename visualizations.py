@@ -488,12 +488,10 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
     types = set(niches)
     types.discard("0b0")
     k = 30
-    two_color = False
     if len(types) > 1:
         types = generate_ranks(list(types), k)
     else:
         types = {list(types)[0]:1}
-        two_color = True
     types["0b0"] = 0
     
     for world in worlds:
@@ -502,7 +500,7 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
         for i in range(len(grid)):
              grid[i] = [res_set_to_phenotype(grid[i][j], world.resources) for j in range(len(grid[i]))]
     
-        grid = color_by_phenotype(grid,  9, True, two_color)
+        grid = color_by_phenotype(grid,  9, True)
 
         print "making plot", "niches_"+ (world.name if outfile == "" else outfile)
         make_imshow_plot(grid, "niches_" + (world.name if outfile == "" else outfile))
@@ -517,10 +515,12 @@ def make_imshow_plot(grid, name):
   plt.tight_layout()
   plt.savefig(name, dpi=500, bbox_inches="tight")
 
-def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
+def color_by_phenotype(data, denom=9.0, mask_zeros = False):
     """
     Loads specified data into a grid to create a heat map of phenotypic
     complexity and location.
+
+    TODO: If there are only two colors, make them black and white
     """
     grid = []
 
@@ -528,40 +528,21 @@ def color_by_phenotype(data, denom=9.0, mask_zeros = False, two_color=False):
         grid.append([])
         for col in range(len(data[row])):
             arr = np.zeros((1,1,3))
-            if data[row][col] != "0b0":
-                locs = []
-                curr = 1
-                while curr >= 1 and curr < len(data[row][col]):
-                    locs.append(data[row][col].find("1", curr)-2)
-                    if curr-3  == locs[-1]:
-                        locs = locs[:-1]
-                        curr = -1
-                    else:
-                        curr = locs[-1] + 3
-                if locs[-1] <= -1:
-                    locs = locs[:-1]
-                    curr = -1
-                
+            if int(data[row][col], 2) > 0:
+
+                #since this is a 1D array, we need the zeroth elements
+                #of np.nonzero.
+                locs = np.nonzero(data[row][col][2:])[0]
                 color = sum([hues[i] for i in locs])/float(len(locs))
                 
                 arr[0,0,0] = color
                 arr[0,0,1] = .9 + .1*((data[row][col].count("1"))/8.0)
-                if two_color:
-                    arr[0,0,2] = 0
-                else:
-                    arr[0,0,2] = .9 + .1*((data[row][col].count("1")+2)**2/100.0) 
+                arr[0,0,2] = .9 + .1*((data[row][col].count("1")+2)**2/100.0) 
 
             else:
                 arr[0,0,0] = int(not mask_zeros)
-                
-                if two_color:
-                    arr[0,0,1] = 0
-                else:
-                    arr[0,0,1] = int(not mask_zeros) * data[row][col].count("1")/8.0 
-                if two_color:
-                    arr[0,0,2] = 1
-                else:
-                    arr[0,0,2] = int(not mask_zeros)
+                arr[0,0,1] = int(not mask_zeros) * data[row][col].count("1")/8.0
+                arr[0,0,2] = int(not mask_zeros)
 
             rgb = matplotlib.colors.hsv_to_rgb(arr)
             grid[row].append([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
