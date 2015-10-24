@@ -404,11 +404,11 @@ def color_array_by_value(value, denom, mask_zeros):
     arr = np.zeros((1,1,3))
     
     if float(value) > 0:
-        arr[0,0,0] = (float(data[row][col])/denom)
+        arr[0,0,0] = (float(value)/denom)
         arr[0,0,1] = 1
         arr[0,0,2] = 1
         
-    elif float(data[row][col]) == 0:
+    elif float(value) == 0:
         arr[0,0,0] = int(not mask_zeros)
         arr[0,0,1] = int(not mask_zeros)
         arr[0,0,2] = 1
@@ -421,20 +421,25 @@ def color_array_by_value(value, denom, mask_zeros):
 
 def color_array_by_hue_mix(value, denom, mask_zeros):
     arr = np.zeros((1,1,3))
-    if int(data[row][col], 2) > 0:
+    if int(value, 2) > 0:
         
         #since this is a 1D array, we need the zeroth elements
         #of np.nonzero.
-        locs = np.nonzero(data[row][col][2:])[0]
+        locs = np.nonzero(value[2:])[0]
         color = sum([hues[i] for i in locs])/float(len(locs))
         
         arr[0,0,0] = color
-        arr[0,0,1] = .9 + .1*((data[row][col].count("1"))/8.0)
-        arr[0,0,2] = .9 + .1*((data[row][col].count("1")+2)**2/100.0) 
+        arr[0,0,1] = .9 + .1*((value.count("1"))/8.0)
+        arr[0,0,2] = .9 + .1*((value.count("1")+2)**2/100.0) 
+
+    elif int(value, 2) == 0:
+        arr[0,0,0] = int(not mask_zeros)
+        arr[0,0,1] = int(not mask_zeros) * value.count("1")/8.0
+        arr[0,0,2] = 1
 
     else:
         arr[0,0,0] = int(not mask_zeros)
-        arr[0,0,1] = int(not mask_zeros) * data[row][col].count("1")/8.0
+        arr[0,0,1] = int(not mask_zeros) * value.count("1")/8.0
         arr[0,0,2] = int(not mask_zeros)
     
     return arr
