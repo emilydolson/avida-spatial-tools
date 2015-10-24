@@ -38,6 +38,13 @@ def rank_clusters(cluster_dict, types):
 
     return cluster_ranks
 
+def prepend_zeros_to_lists(ls):
+    longest = max([len(l) for l in ls])
+
+    for i in range(len(ls)):
+        while len(ls[i]) < longest:
+            ls[i].insert(0, "0")
+
 def dict_increment(d, key, amount):
     if key in d:
         d[key] += amount
