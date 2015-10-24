@@ -401,7 +401,7 @@ def color_grid(data, denom=9.0, mask_zeros = False):
                 arr = color_array_by_value(data[row][col], arr, denom)
             
             rgb = matplotlib.colors.hsv_to_rgb(arr)
-            grid[row].append([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
+            grid[row].append(list(rgb[0][0]))
 
     return grid
 
@@ -476,7 +476,7 @@ def color_percentages(file_list, file_name="color_percent.png", \
                     arr[0, 0, 2] = 1 #value is always 1
                     rgb = matplotlib.colors.hsv_to_rgb(arr) #convert to rgb
 
-                    grid[i*3+k][j*3+l] = ([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
+                    grid[i*3+k][j*3+l] = list(rgb[0][0])
 
     make_imshow_plot(grid, "colorpercentages")
 
