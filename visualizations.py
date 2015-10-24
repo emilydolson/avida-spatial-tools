@@ -390,37 +390,34 @@ def color_grid(data, denom=9.0, mask_zeros = False):
         grid.append([])
         for col in range(len(data[row])):
             
+            arr = np.zeros((1,1,3))
+            arr[0,0,0] = int(not mask_zeros)
+            arr[0,0,1] = int(not mask_zeros)
+            arr[0,0,2] = int(not mask_zeros)
+
             if type(data[row][col]) is str:
-                arr = color_array_by_hue_mix(data[row][col], denom, mask_zeros)
+                arr = color_array_by_hue_mix(data[row][col], arr, denom)
             else:
-                arr = color_array_by_value(data[row][col], denom, mask_zeros)
+                arr = color_array_by_value(data[row][col], arr, denom)
             
             rgb = matplotlib.colors.hsv_to_rgb(arr)
             grid[row].append([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
 
     return grid
 
-def color_array_by_value(value, denom, mask_zeros):
-    arr = np.zeros((1,1,3))
+def color_array_by_value(value, arr, denom):
     
     if float(value) > 0:
         arr[0,0,0] = (float(value)/denom)
         arr[0,0,1] = 1
-        arr[0,0,2] = 1
         
-    elif float(value) == 0:
-        arr[0,0,0] = int(not mask_zeros)
-        arr[0,0,1] = int(not mask_zeros)
+    if float(value) >= 0:
         arr[0,0,2] = 1
-    else: #-1
-        arr[0,0,0] = int(not mask_zeros)
-        arr[0,0,1] = int(not mask_zeros)
-        arr[0,0,2] = int(not mask_zeros)
-    
+
     return arr
 
-def color_array_by_hue_mix(value, denom, mask_zeros):
-    arr = np.zeros((1,1,3))
+def color_array_by_hue_mix(value, arr, denom):
+
     if int(value, 2) > 0:
         
         #since this is a 1D array, we need the zeroth elements
@@ -429,19 +426,13 @@ def color_array_by_hue_mix(value, denom, mask_zeros):
         color = sum([hues[i] for i in locs])/float(len(locs))
         
         arr[0,0,0] = color
-        arr[0,0,1] = .9 + .1*((value.count("1"))/8.0)
+        arr[0,0,1] = .9 + .1*((value.count("1"))/denom)
         arr[0,0,2] = .9 + .1*((value.count("1")+2)**2/100.0) 
 
-    elif int(value, 2) == 0:
-        arr[0,0,0] = int(not mask_zeros)
-        arr[0,0,1] = int(not mask_zeros) * value.count("1")/8.0
-        arr[0,0,2] = 1
-
     else:
-        arr[0,0,0] = int(not mask_zeros)
-        arr[0,0,1] = int(not mask_zeros) * value.count("1")/8.0
-        arr[0,0,2] = int(not mask_zeros)
-    
+        arr[0,0,1] *= value.count("1")/denom
+        arr[0,0,2] = int(int(value, 2) == 0)
+
     return arr
 
 def color_percentages(file_list, file_name="color_percent.png", \
