@@ -14,7 +14,7 @@ def test_parse_environment_file():
 def test_load_grid_data():
     data_file = "test/grid_task.200000.dat"
     data = load_grid_data(data_file, 5)
-    assert(data == [[['0b0'], ['0b0'], ['0b0'], ['0b0'],\
+    assert(data == [[['0b1100'], ['0b0'], ['0b0'], ['0b0'],\
                      ['0b0'], ['0b0'], ['0b0'], ['0b0'], \
                      ['0b0'], ['0b0'], ['0b0']], [['0b0'],\
                     ['0b0'], ['0b0'], ['0b1001'], ['0b1001'],\

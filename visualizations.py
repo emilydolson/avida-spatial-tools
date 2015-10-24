@@ -167,7 +167,7 @@ def optimal_phenotypes(env_file, grid_file, agg=mean):
     make_imshow_plot(grid, "test3")
     return grid
 
-def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
+def paired_environment_phenotype_movie(species_files, env_file, k=15):
     """
     Makes an animation overlaying colored circles representing phenotypes over
     an imshow() plot indicating the resources present in each cell. Colors
@@ -207,7 +207,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
     
     niches = [res_set_to_phenotype(i, world.resources) for i in niches]
     phenotypes = [phen for col in data for row in col for phen in row]
-
+                
     #TODO: FIX THIS!
     types = set(phenotypes+niches)
 
@@ -216,6 +216,7 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
 
     #Do all clustering ahead of time so colors remain consistent.
     types = generate_ranks(list(types), k)
+    
     types["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
     types["0b0"] = 0 # The empty phenotype/niche should always be rank 0
 
@@ -248,12 +249,13 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15, res_list=[
 
         #Recolor circles
         plot_phens_blits(phen_grid, k, types, patches)
+
         return patches,
 
     #Do actual animation
-    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(species_files), blit=True)
-    anim.save(world.name + "_phenotype_overlay.mp4", writer="mencoder", fps=2)
-
+    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(species_files), blit=True, interval=750)
+    
+    anim.save(world.name + "_phenotype_overlay.mov")
     return anim
 
 def plot_phens(phen_grid, k, types):
@@ -270,7 +272,7 @@ def plot_phens_circles(phen_grid):
     grid = phen_grid
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if grid[i][j] != "0b000000000":
+            if grid[i][j] != "0b0":
                 first = True
                 for k in range(2, len(grid[i][j])):
                     if int(grid[i][j][k]) == 1:
@@ -284,17 +286,18 @@ def plot_phens_circles(phen_grid):
                         first = False
 
 def plot_phens_blits(phen_grid, k, types, patches):
-
+    
     assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
     grid = color_grid(assignments, k+1, True)
-    
-    for i in range(len(phen_grid)):
-        for j in range(len(phen_grid[i])):
+
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
             if grid[i][j] == [0,0,0]:
-                patches[i*len(phen_grid)+j].set_visible(False)
+                patches[i * len(grid[i]) + j].set_visible(False)
             else:
-                patches[i*len(phen_grid)+j].set_facecolor(grid[i][j])
-                patches[i*len(phen_grid)+j].set_visible(True)
+                patches[i*len(grid[i])+j].set_facecolor(grid[i][j])
+                patches[i*len(grid[i])+j].set_visible(True)
+
     return patches
 
 def plot_world(world, k, types, p=None):
@@ -698,7 +701,8 @@ def task_percentages(data, n_tasks=9):
         for j in range(len(data[0])):
             percentages = [0.0]*n_tasks
             for k in range(len(data[i][j])):
-                for l in range(2, len(data[i][j][k])):
+                b_ind = data[i][j][k].find("b")
+                for l in range(b_ind+1, len(data[i][j][k])):
                     percentages[l-2] += int(data[i][j][k][l])
             for p in range(len(percentages)):
                 percentages[p] /= len(data[i][j])

@@ -33,8 +33,8 @@ def test_optimal_phenotypes():
 
 def test_paired_environment_phenotype_movie():
     paired_environment_phenotype_movie(
-        glob.glob("test/grid_task.*.dat"), 
-        "test/example_environment.cfg", 15, ["safe"])
+        glob.glob("test/grid_task.*.dat")[:], 
+        "test/example_environment.cfg", 15)
 
 if __name__ == "__main__":
      test_paired_environment_phenotype_movie()
