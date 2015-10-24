@@ -508,7 +508,7 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
     worlds = parse_environment_file_list(filename, world_size)
     niches = []
     for world in worlds:
-        temp_niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
+        temp_niches = flatten_array(world)
         niches += [res_set_to_phenotype(i, world.resources) for i in temp_niches]
 
     types = set(niches)
