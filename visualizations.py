@@ -64,6 +64,7 @@ def prepend_zeros_to_lists(ls):
             ls[i].insert(0, "0")
 
 
+
 def cluster_types(types, max_clust=12):
     """
     Generates a dictionary mapping each binary number in types to an integer
@@ -71,32 +72,12 @@ def cluster_types(types, max_clust=12):
     which binary numbers should map to the same integer.
     """
     
-    #Fill in leading zeros to make all numbers same length.
-    ls = [list(t[2:]) for t in types]
-    prepend_zeros_to_lists(ls)
-
-    #Do actual clustering
-    dist_matrix = pdist(ls, weighted_hamming)
-    clusters = hierarchicalcluster.complete(dist_matrix)
     if len(types) < max_clust:
         max_clust = len(types)
-    clusters = hierarchicalcluster.fcluster(clusters, max_clust, \
-                                            criterion="maxclust")
-
-    #Group members of each cluster together
-    cluster_dict = dict((c, []) for c in set(clusters))
-    for i in range(len(types)):
-        cluster_dict[clusters[i]].append(types[i])
-
-    #Figure out the relative rank of each cluster
-    cluster_ranks = dict.fromkeys(cluster_dict.keys())
-    for key in cluster_dict:
-        cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
-
-    i = len(cluster_ranks)
-    for key in sorted(cluster_ranks, key=cluster_ranks.get):
-        cluster_ranks[key] = i
-        i -= 1
+ 
+    #Do actual clustering
+    cluster_dict = do_clustering(types, max_clust)
+    cluster_ranks = rank_clusters(cluster_dict, types)
 
     #Create a dictionary mapping binary numbers to indices
     ranks = {}
