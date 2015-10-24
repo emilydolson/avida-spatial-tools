@@ -20,6 +20,7 @@ from parse_files import *
 #RES_SET = ["safe"]
 RES_SET = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]
 
+hues = [.1, .7]
 hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [0, .075, .175, .2, .425, .575, .01, .5]
@@ -354,7 +355,7 @@ def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode
             world[i][j] = res_set_to_phenotype(world[i][j], world.resources)
 
     #plot_world(world, len(types.keys()), types)
-    world_grid = color_by_phenotype(world, 9.0, True)
+    world_grid = color_grid(world, 9.0, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.imshow(world_grid, interpolation="none", hold=True)
@@ -377,7 +378,6 @@ def make_species_grid(file_list, agg=mode, name="speciesgrid"):
     data = agg_grid(load_grid_data(file_list), agg)
     data, k = assign_ranks_by_cluster(data, 27)
     grid = color_grid(data, k, True)
-    #grid = color_by_phenotype(data, 9.0, True)
     return make_imshow_plot(grid, name)
 
 def color_grid(data, denom=9.0, mask_zeros = False):
@@ -389,26 +389,55 @@ def color_grid(data, denom=9.0, mask_zeros = False):
     for row in range(len(data)):
         grid.append([])
         for col in range(len(data[row])):
-            arr = np.zeros((1,1,3))
             
-            if float(data[row][col]) > 0:
-                arr[0,0,0] = (float(data[row][col])/denom)
-                arr[0,0,1] = 1
-                arr[0,0,2] = 1
-
-            elif float(data[row][col]) == 0:
-                arr[0,0,0] = int(not mask_zeros)
-                arr[0,0,1] = int(not mask_zeros)
-                arr[0,0,2] = 1
-            else: #-1
-                arr[0,0,0] = int(not mask_zeros)
-                arr[0,0,1] = int(not mask_zeros)
-                arr[0,0,2] = int(not mask_zeros)
-
+            if type(data[row][col]) is str:
+                arr = color_array_by_hue_mix(data[row][col], denom, mask_zeros)
+            else:
+                arr = color_array_by_value(data[row][col], denom, mask_zeros)
+            
             rgb = matplotlib.colors.hsv_to_rgb(arr)
             grid[row].append([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
 
     return grid
+
+def color_array_by_value(value, denom, mask_zeros):
+    arr = np.zeros((1,1,3))
+    
+    if float(value) > 0:
+        arr[0,0,0] = (float(data[row][col])/denom)
+        arr[0,0,1] = 1
+        arr[0,0,2] = 1
+        
+    elif float(data[row][col]) == 0:
+        arr[0,0,0] = int(not mask_zeros)
+        arr[0,0,1] = int(not mask_zeros)
+        arr[0,0,2] = 1
+    else: #-1
+        arr[0,0,0] = int(not mask_zeros)
+        arr[0,0,1] = int(not mask_zeros)
+        arr[0,0,2] = int(not mask_zeros)
+    
+    return arr
+
+def color_array_by_hue_mix(value, denom, mask_zeros):
+    arr = np.zeros((1,1,3))
+    if int(data[row][col], 2) > 0:
+        
+        #since this is a 1D array, we need the zeroth elements
+        #of np.nonzero.
+        locs = np.nonzero(data[row][col][2:])[0]
+        color = sum([hues[i] for i in locs])/float(len(locs))
+        
+        arr[0,0,0] = color
+        arr[0,0,1] = .9 + .1*((data[row][col].count("1"))/8.0)
+        arr[0,0,2] = .9 + .1*((data[row][col].count("1")+2)**2/100.0) 
+
+    else:
+        arr[0,0,0] = int(not mask_zeros)
+        arr[0,0,1] = int(not mask_zeros) * data[row][col].count("1")/8.0
+        arr[0,0,2] = int(not mask_zeros)
+    
+    return arr
 
 def color_percentages(file_list, file_name="color_percent.png", \
                       intensification_factor=1.2):
@@ -500,7 +529,7 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
         for i in range(len(grid)):
              grid[i] = [res_set_to_phenotype(grid[i][j], world.resources) for j in range(len(grid[i]))]
     
-        grid = color_by_phenotype(grid,  9, True)
+        grid = color_grid(grid,  9, True)
 
         print "making plot", "niches_"+ (world.name if outfile == "" else outfile)
         make_imshow_plot(grid, "niches_" + (world.name if outfile == "" else outfile))
@@ -514,41 +543,6 @@ def make_imshow_plot(grid, name):
   plt.imshow(grid, interpolation="none", aspect=1)
   plt.tight_layout()
   plt.savefig(name, dpi=500, bbox_inches="tight")
-
-def color_by_phenotype(data, denom=9.0, mask_zeros = False):
-    """
-    Loads specified data into a grid to create a heat map of phenotypic
-    complexity and location.
-
-    TODO: If there are only two colors, make them black and white
-    """
-    grid = []
-
-    for row in range(len(data)):
-        grid.append([])
-        for col in range(len(data[row])):
-            arr = np.zeros((1,1,3))
-            if int(data[row][col], 2) > 0:
-
-                #since this is a 1D array, we need the zeroth elements
-                #of np.nonzero.
-                locs = np.nonzero(data[row][col][2:])[0]
-                color = sum([hues[i] for i in locs])/float(len(locs))
-                
-                arr[0,0,0] = color
-                arr[0,0,1] = .9 + .1*((data[row][col].count("1"))/8.0)
-                arr[0,0,2] = .9 + .1*((data[row][col].count("1")+2)**2/100.0) 
-
-            else:
-                arr[0,0,0] = int(not mask_zeros)
-                arr[0,0,1] = int(not mask_zeros) * data[row][col].count("1")/8.0
-                arr[0,0,2] = int(not mask_zeros)
-
-            rgb = matplotlib.colors.hsv_to_rgb(arr)
-            grid[row].append([rgb[0,0,0], rgb[0,0,1], rgb[0,0,2]])
-
-    return grid
-
 
 """
 #NOT WORKING YET
