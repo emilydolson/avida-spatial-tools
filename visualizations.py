@@ -508,7 +508,7 @@ def visualize_environment(filename, world_size=(60,60), outfile=""):
     worlds = parse_environment_file_list(filename, world_size)
     niches = []
     for world in worlds:
-        temp_niches = [world[i][j] for i in range(len(world)) for j in range(len(world[i]))]
+        temp_niches = flatten_array(world)
         niches += [res_set_to_phenotype(i, world.resources) for i in temp_niches]
 
     types = set(niches)
@@ -590,6 +590,10 @@ def compute_diversity_gradient_snazzy_gaussian(world, sd=5, recursive=False):
         plt.show()
 """
 
+def get_prop_in_region(var, index, regions):
+    return (index/float(regions) - var)/(
+        (index+1)/float(regions) - index/float(regions))
+
 def compute_diversity_gradient(world, grain=None, recursive=False):
     world_x = len(world[0])
     world_y = len(world)
@@ -615,9 +619,9 @@ def compute_diversity_gradient(world, grain=None, recursive=False):
             x_prop = 1
             y_prop = 1
             if i < world_x - 1 and next_x != x:
-                x_prop = (i/float(x_regions)-x)/((i+1)/float(x_regions) - i/float(x_regions))
+                x_prop = get_prop_in_region(x, i, x_regions)
             if j < world_y - 1 and floor((j+1)/float(y_regions)) != y:
-                y_prop = (j/float(y_regions)-y)/((j+1)/float(y_regions) - j/float(y_regions))
+                y_prop = get_prop_in_region(y, j, y_regions)
             
             dict_increment(regions[x][y], world[i][j][0], x_prop*y_prop)
 
