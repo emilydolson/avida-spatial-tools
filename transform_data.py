@@ -2,6 +2,26 @@ from utils import *
 from scipy.spatial.distance import pdist
 import scipy.cluster.hierarchy as hierarchicalcluster
 
+def get_ranks_for_environment_and_phenotypes(world, phenotypes):
+    #Create list of all niches and all phenotypes, in phenotype format
+    niches = flatten_array(world)    
+    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
+    phenotypes = flatten_array(phenotypes)
+                
+    types = set(phenotypes+niches)
+
+    types.discard("-0b1") #We'll handle this specially
+    types.discard("0b0") #We'll handle this specially
+
+    #Do all clustering ahead of time so colors remain consistent.
+    ranks = generate_ranks(list(types), k)
+    
+    ranks["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
+    ranks["0b0"] = 0 # The empty phenotype/niche should always be rank 0
+
+    return ranks
+    
+
 def assign_ranks_by_cluster(grid, n, ranks=None):
     if ranks is None:
         ranks = generate_ranks(grid, n)

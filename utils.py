@@ -6,7 +6,10 @@ import pysal
 import numpy as np
 
 def flatten_array(grid):
-    return [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
+    grid = [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
+    while type(grid[0]) is list:
+        grid = flatten_array(grid)
+    return grid
 
 def do_clustering(types, max_clust):
     #Fill in leading zeros to make all numbers same length.
@@ -61,6 +64,11 @@ def function_with_args(func, *args):
     def inner(arg):
         return func(arg, *args)
     return inner
+
+def convert_world_to_phenotype(world):
+    conversion_func = function_with_args(res_set_to_phenotype, world.resources)
+    grid = agg_grid(deepcopy(world), conversion_func)
+
 
 def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
 

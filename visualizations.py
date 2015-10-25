@@ -45,7 +45,7 @@ def optimal_phenotypes(env_file, grid_file, agg=mean):
 
     make_visualization(env_file, grid_file, make_optimal_phenotype_grid, mean, heat_map, "optimal_phenotypes")
 
-def paired_environment_phenotype_movie(species_files, env_file, k=15):
+def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     """
     Makes an animation overlaying colored circles representing phenotypes over
     an imshow() plot indicating the resources present in each cell. Colors
@@ -72,34 +72,10 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15):
             [environment_file_identifier]_phenotype_overlay.mp4
     """
 
-    #Put grid_tasks files in correct order
-    species_files.sort(key=lambda f: int(re.sub("[^0-9]", "", f)))
-    
-    #load data
-    data = load_grid_data(species_files)
-    world_size = (len(data[0]), len(data)) #extract size from grid_tasks
-    world = parse_environment_file(env_file, world_size)
-
-    #Create list of all niches and all phenotypes, in phenotype format
-    niches = flatten_array(world)
-    
-    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
-    phenotypes = [phen for col in data for row in col for phen in row]
-                
-    #TODO: FIX THIS!
-    types = set(phenotypes+niches)
-
-    types.discard("-0b1") #We'll handle this specially
-    types.discard("0b0") #We'll handle this specially
-
-    #Do all clustering ahead of time so colors remain consistent.
-    types = generate_ranks(list(types), k)
-    
-    types["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
-    types["0b0"] = 0 # The empty phenotype/niche should always be rank 0
-
     #So we don't have to keep initializig new arrays or screw up original data
-    phen_grid = deepcopy(data)
+    phen_grid = deepcopy(phenotypes)
+    
+    types = get_ranks_for_environment_and_phenotypes(environment, phenotypes)
 
     #Create figure to do plotting
     fig = plt.figure(figsize=(20,20))
@@ -138,10 +114,10 @@ def paired_environment_phenotype_movie(species_files, env_file, k=15):
     anim.save(world.name + "_phenotype_overlay.mov")
     return anim
 
-def plot_phens(phen_grid, k, types):
+def plot_phens(phen_grid, denom=9):
     
-    assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
-    grid = color_grid(assignments, k+1, True)
+    #assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
+    grid = color_grid(phen_grid, k+1, True)
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if grid[i][j] != [0,0,0]:
@@ -181,17 +157,9 @@ def plot_phens_blits(phen_grid, k, types, patches):
 
     return patches
 
-def plot_world(world, k, types, p=None):
+def plot_world(world, denom=9.0, p=None):
 
-    #Convert to binary numbers if needed
-    try:
-        int(world[0][0], 2)
-    except:
-        conversion_func = function_with_args(res_set_to_phenotype, world.resources)
-        grid = agg_grid(deepcopy(world), conversion_func)
-
-    assignments, n = assign_ranks_by_cluster(grid, k, types)
-    world = color_grid(assignments, k+1, True)
+    world = color_grid(assignments, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -202,63 +170,26 @@ def plot_world(world, k, types, p=None):
     if p != None:
         axes.add_collection(p)
 
-def paired_environment_phenotype_grid(species_files, env_file, agg=mode):
+def paired_environment_phenotype_grid(environment, phenotypes):
 
-    phen_grid = agg_grid(load_grid_data(species_files), agg)
-    world_size = (len(phen_grid[0]), len(phen_grid))
-    world = parse_environment_file(env_file, world_size)
+    ranks = get_ranks_for_environment_and_phenotypes(environment, phenotypes)
+    environment_assignments, n = assign_ranks_by_cluster(environment, k, ranks)
+    phenotype_assignments, n = assign_ranks_by_cluster(phenotypes, k, ranks)
 
-    phenotypes = flatten_array(phen_grid)
-    niches = deepcopy(world)
-    niches = flatten_array(niches)
-    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
+    plot_world(environment_assignments, n)
+    plot_phens(phenotype_assignments, n)
 
-    types = set(phenotypes+niches)
-    types.discard("0b0")
-    k = 25
-    types = generate_ranks(list(types), k)
-    types["0b0"] = 0
+    plt.savefig("phenotype_niches_" + environment.name, dpi=1000)
 
-    plot_world(world, len(types.keys()), types)
-    plot_phens(phen_grid, len(types.keys()), types)
-
-    plt.savefig("phenotype_niches_"+world.name, dpi=1000)
-
-def paired_environment_phenotype_grid_circles(species_files, env_files, agg=mode, name=""):
+def paired_environment_phenotype_grid_circles(environment, phenotypes):
     plt.gcf().set_size_inches(40,40)
-    phen_grid = agg_grid(load_grid_data(species_files), agg)
-    world_size = (len(phen_grid[0]), len(phen_grid))
-    world = parse_environment_file(env_files, world_size)
 
-    for i in range(world_size[1]):
-        for j in range(world_size[0]):
-            world[i][j] = res_set_to_phenotype(world[i][j], world.resources)
+    plot_world(environment)
+    plot_phens_circles(phenotypes)
 
-    #plot_world(world, len(types.keys()), types)
-    world_grid = color_grid(world, 9.0, True)
-    plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
-            labelright="off", bottom="off", top="off", left="off", right="off")
-    plt.imshow(world_grid, interpolation="none", hold=True)
-    #plt.show()
-    axes = plt.gca()
-    axes.autoscale(False)
-    plot_phens_circles(phen_grid)
-
-    if name == "":
-        plt.savefig("phenotype_niches_"+world.name, dpi=500)
-    else:
-        plt.savefig("phenotype_niches_"+name, dpi=500)
+    plt.savefig("phenotype_niches_"+world.name, dpi=500)
+    
     return plt.gcf()
-
-def make_species_grid(file_list, agg=mode, name="speciesgrid"):
-    """
-    Makes a heat map of the most common phenotypes (by phenotype) in each
-    cell in specified in file (string).
-    """
-    data = agg_grid(load_grid_data(file_list), agg)
-    data, k = assign_ranks_by_cluster(data, 27)
-    grid = color_grid(data, k, True)
-    return make_imshow_plot(grid, name)
 
 def color_grid(data, denom=9.0, mask_zeros = False):
     """
@@ -377,39 +308,9 @@ def color_percentages2(file_list):
             r = sum(data[i][j][:3])/3.0
             g = sum(data[i][j][3:6])/3.0
             b = sum(data[i][j][6:])/3.0
-            grid[i][j] =(r, g, b)
+            grid[i][j] = (r, g, b)
 
     make_imshow_plot(grid, "colorpercentages2")
-    return grid
-
-
-def visualize_environment(filename, world_size=(60,60), outfile=""):
-    worlds = parse_environment_file_list(filename, world_size)
-    niches = []
-    for world in worlds:
-        temp_niches = flatten_array(world)
-        niches += [res_set_to_phenotype(i, world.resources) for i in temp_niches]
-
-    types = set(niches)
-    types.discard("0b0")
-    k = 30
-    if len(types) > 1:
-        types = generate_ranks(list(types), k)
-    else:
-        types = {list(types)[0]:1}
-    types["0b0"] = 0
-    
-    for world in worlds:
-        #grid, d = cluster(world[seed], len(types), types)
-        grid = world.grid
-        for i in range(len(grid)):
-             grid[i] = [res_set_to_phenotype(grid[i][j], world.resources) for j in range(len(grid[i]))]
-    
-        grid = color_grid(grid,  9, True)
-
-        print "making plot", "niches_"+ (world.name if outfile == "" else outfile)
-        make_imshow_plot(grid, "niches_" + (world.name if outfile == "" else outfile))
-
     return grid
 
 

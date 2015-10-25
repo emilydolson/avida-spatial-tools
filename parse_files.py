@@ -5,7 +5,7 @@ from utils import *
 from copy import deepcopy
 from environment_file import EnvironmentFile
 
-def load_grid_data(file_list, length = 9):
+def load_grid_data(file_list, length = 9, sort=True):
     """
     Helper function to load data from multiple grid_task files.
 
@@ -32,6 +32,10 @@ def load_grid_data(file_list, length = 9):
     #If there's only one file, we pretend it's a list
     try:
         file_list[0] = file_list[0]
+
+        if sort:
+            #put file_list in chronological order
+            file_list.sort(key=lambda f: int(re.sub("[^0-9]", "", f)))
     except:
         file_list = [file_list]
 
