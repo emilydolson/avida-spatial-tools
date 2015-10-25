@@ -10,6 +10,7 @@ from matplotlib.collections import PatchCollection
 from transform_data import *
 from matplotlib import pyplot as plt
 import matplotlib
+import matplotlib.animation
 from parse_files import *
 
 #RES_SET = ["safe"]
@@ -22,19 +23,27 @@ hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #random.shuffle(hues)
 
 
+def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func, name=""):
+
+    phenotypes = load_grid_data(grid_files)
+    world_size = (len(phenotypes[0]), len(phenotypes))
+
+    worlds = parse_environment_file_list(env_files, world_size)[0]
+
+    phenotypes = grid_transform(worlds, phenotypes)
+    phenotypes = agg_grid(phenotypes, grid_agg)
+    
+    name = name + "_" + worlds.name + "_" + vis_func.__name__ + ".png" 
+
+    vis_func(phenotypes, name)
+
+def heat_map(grid, name):
+    grid = color_grid(grid)
+    make_imshow_plot(grid, name)
+
 def optimal_phenotypes(env_file, grid_file, agg=mean):
 
-    phenotypes = load_grid_data([grid_file])
-    world_size = (len(phenotypes[0]), len(phenotypes))
-    world = parse_environment_file(env_file, world_size)
-
-    phenotypes = make_optimal_phenotype_grid(world, phenotypes)
-
-    phenotypes = agg_grid(phenotypes, agg)
-
-    grid = color_grid(phenotypes)
-    make_imshow_plot(grid, "test3")
-    return grid
+    make_visualization(env_file, grid_file, make_optimal_phenotype_grid, mean, heat_map, "optimal_phenotypes")
 
 def paired_environment_phenotype_movie(species_files, env_file, k=15):
     """

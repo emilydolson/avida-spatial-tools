@@ -90,14 +90,14 @@ def make_count_grid(data):
     return data
 
 def make_optimal_phenotype_grid(environment, phenotypes):
-    world_size = environment.world_size
+    world_size = environment.size
     phenotypes = deepcopy(phenotypes)
 
     for i in range(world_size[1]):
         for j in range(world_size[0]):
             for k in range(len(phenotypes[i][j])):
                 phenotype = phenotype_to_res_set(phenotypes[i][j][k])
-                diff = len(world[i][j].symmetric_difference(phenotype))
+                diff = len(environment[i][j].symmetric_difference(phenotype))
                 phenotypes[i][j][k] = diff
 
     return phenotypes
