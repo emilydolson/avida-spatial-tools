@@ -37,8 +37,8 @@ def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func
 
     vis_func(phenotypes, name)
 
-def heat_map(grid, name):
-    grid = color_grid(grid)
+def heat_map(grid, denom, name):
+    grid = color_grid(grid, denom)
     make_imshow_plot(grid, name)
 
 def optimal_phenotypes(env_file, grid_file, agg=mean):
@@ -78,13 +78,13 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     #Create list of circles at every place in environment
     patches = []
 
-    for i in range(len(phen_grid)):
-        for j in range(len(phen_grid[i])):
+    for i in range(len(phenotypes)):
+        for j in range(len(phenotypes[i])):
             patches.append(plt.Circle((j,i), radius=.3, lw=2, ec="black", facecolor=None))
         
     #This will be called to color niches, which are always in background
     def init():
-        plot_world(world, k)
+        plot_world(environment, k)
         for p in patches:
             fig.gca().add_patch(p)
 
@@ -99,15 +99,14 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     #Do actual animation
     anim = matplotlib.animation.FuncAnimation(
         fig, animate, init_func=init, 
-        frames=len(species_files), blit=True, interval=750)
+        frames=len(phenotypes[0][0]), blit=True, interval=750)
     
-    anim.save(world.name + "_phenotype_overlay.mov")
+    anim.save(environment.name + "_phenotype_overlay.mov")
     return anim
 
 def plot_phens(phen_grid, denom=9):
     
-    #assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
-    grid = color_grid(phen_grid, k+1, True)
+    grid = color_grid(phen_grid, denom, True)
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if grid[i][j] != [0,0,0]:
@@ -146,9 +145,9 @@ def plot_phens_blits(phen_grid, k, patches):
 
     return patches
 
-def plot_world(world, denom=9.0, p=None):
+def plot_world(world, denom=9.0):
 
-    world = color_grid(assignments, denom, True)
+    world = color_grid(world, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -156,27 +155,18 @@ def plot_world(world, denom=9.0, p=None):
     axes = plt.gca()
     axes.autoscale(False)
 
-    if p != None:
-        axes.add_collection(p)
+def paired_environment_phenotype_grid(environment, phenotypes, k=15):
 
-def paired_environment_phenotype_grid(environment, phenotypes):
-
-    ranks = get_ranks_for_environment_and_phenotypes(environment, phenotypes)
-    environment_assignments, n = assign_ranks_by_cluster(environment, k, ranks)
-    phenotype_assignments, n = assign_ranks_by_cluster(phenotypes, k, ranks)
-
-    plot_world(environment_assignments, n)
-    plot_phens(phenotype_assignments, n)
+    plot_world(environment, k)
+    plot_phens(phenotypes, k)
 
     plt.savefig("phenotype_niches_" + environment.name, dpi=1000)
 
 def paired_environment_phenotype_grid_circles(environment, phenotypes):
-    plt.gcf().set_size_inches(40,40)
-
     plot_world(environment)
     plot_phens_circles(phenotypes)
 
-    plt.savefig("phenotype_niches_"+world.name, dpi=500)
+    plt.savefig("phenotype_niches_circles"+environment.name, dpi=1000)
     
     return plt.gcf()
 

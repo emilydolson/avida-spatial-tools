@@ -1,11 +1,12 @@
 #This file contains functions for parsing Avida environment files and spatial
 #data output files.
 
+import re
 from utils import *
 from copy import deepcopy
 from environment_file import EnvironmentFile
 
-def load_grid_data(file_list, length = 9, sort=True):
+def load_grid_data(file_list, sort=True):
     """
     Helper function to load data from multiple grid_task files.
 
@@ -30,14 +31,11 @@ def load_grid_data(file_list, length = 9, sort=True):
     """
 
     #If there's only one file, we pretend it's a list
-    try:
-        file_list[0] = file_list[0]
-
-        if sort:
-            #put file_list in chronological order
-            file_list.sort(key=lambda f: int(re.sub("[^0-9]", "", f)))
-    except:
+    if not type(file_list) is list:
         file_list = [file_list]
+    elif sort:
+        #put file_list in chronological order
+        file_list.sort(key=lambda f: int(re.sub("[^0-9]", "", f)))
 
     world_size = get_world_dimensions(file_list[0])
 
@@ -52,40 +50,12 @@ def load_grid_data(file_list, length = 9, sort=True):
             lines[i] = lines[i].split()
             for j in range(world_size[0]):
                 val = bin(int(lines[i][j]))
-                #neg = val.find("-") > - 1
-                #while len(val) < length + 2 + neg:
-                #    #can now handle -1
-                #    b_ind = val.find("b") + 1
-                #    val = val[:b_ind] + "0" + val[b_ind:]
                 data[i][j].append(val)
 
         infile.close()
 
     return data
 
-def agg_grid(grid, agg=len):
-    """
-    Many functions return a 2d list with a complex data type in each cell.
-    For instance, grids representing environments have a set of resources, while
-    reading in multiple data files at once will yield a list containing the
-    values for that cell from each file. In order to visualize these data types
-    it is helpful to summarize the more complex data types with a single number.
-    For instance, you might want to take the length of a resource set to see how
-    many resource types are present. Alternately, you might want to take the
-    mode of a list to see the most common phenotype in a cell. 
-
-    This function facilitates this analysis by calling the given aggregation
-    function (agg) on each cell of the given grid and returning the result.
-
-    agg - A function indicating how to summarize grid contents. Default: len.
-    """
-    grid = deepcopy(grid)
-
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
-            grid[i][j] = agg(grid[i][j])
-
-    return grid
 
 def make_niche_grid(res_dict, world_size=(60,60)):
     """

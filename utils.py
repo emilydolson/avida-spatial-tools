@@ -5,6 +5,36 @@ from copy import deepcopy
 import pysal
 import numpy as np
 
+def agg_grid(grid, agg=None):
+    """
+    Many functions return a 2d list with a complex data type in each cell.
+    For instance, grids representing environments have a set of resources, while
+    reading in multiple data files at once will yield a list containing the
+    values for that cell from each file. In order to visualize these data types
+    it is helpful to summarize the more complex data types with a single number.
+    For instance, you might want to take the length of a resource set to see how
+    many resource types are present. Alternately, you might want to take the
+    mode of a list to see the most common phenotype in a cell. 
+
+    This function facilitates this analysis by calling the given aggregation
+    function (agg) on each cell of the given grid and returning the result.
+
+    agg - A function indicating how to summarize grid contents. Default: len.
+    """
+    grid = deepcopy(grid)
+
+    if agg is None:
+        if type(grid[0][0]) is list and type(grid[0][0][0]) is str:
+            agg = string_avg
+        else:
+            agg = mode
+
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            grid[i][j] = agg(grid[i][j])
+
+    return grid
+
 def slice_3d_grid(grid, n):
     phen_grid = initialize_grid((len(grid[0]), len(grid)), 0)
 
@@ -77,6 +107,7 @@ def function_with_args(func, *args):
 def convert_world_to_phenotype(world):
     conversion_func = function_with_args(res_set_to_phenotype, world.resources)
     grid = agg_grid(deepcopy(world), conversion_func)
+    return grid
 
 
 def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
@@ -109,7 +140,7 @@ def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or"
     #Remove uneceesary leading 0s
     while phenotype[0] == "0" and len(phenotype) > 1:
         phenotype = phenotype[1:]
-    
+
     return "0b"+"".join(phenotype)
 
 
@@ -177,7 +208,7 @@ def median(ls):
     ls.sort()
     return ls[int(floor(len(ls)/2.0))]
 
-def string_avg(strings, binary=False):
+def string_avg(strings, binary=True):
     """
     Takes a list of strings of equal length and returns a string containing
     the most common value from each index in the string.

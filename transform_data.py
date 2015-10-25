@@ -2,10 +2,21 @@ from utils import *
 from scipy.spatial.distance import pdist
 import scipy.cluster.hierarchy as hierarchicalcluster
 
-def get_ranks_for_environment_and_phenotypes(world, phenotypes):
+def rank_environment_and_phenotypes(environment, phenotypes, k=15):
+    environment = convert_world_to_phenotype(environment)
+    ranks = get_ranks_for_environment_and_phenotypes(environment, phenotypes)
+    environment, n = assign_ranks_by_cluster(environment, k, ranks)
+    phenotypes, n = assign_ranks_by_cluster(phenotypes, k, ranks)
+    return environment, phenotypes, n
+
+
+def get_ranks_for_environment_and_phenotypes(environment, phenotypes, k=15):
+    """
+    Environment is expected to already have been converted to binary numbers
+    (generally because this is being called by rank_environment_and_phenotypes)
+    """
     #Create list of all niches and all phenotypes, in phenotype format
-    niches = flatten_array(world)    
-    niches = [res_set_to_phenotype(i, world.resources) for i in niches]
+    niches = flatten_array(environment)    
     phenotypes = flatten_array(phenotypes)
                 
     types = set(phenotypes+niches)
@@ -45,9 +56,10 @@ def assign_ranks_to_grid(grid, ranks):
     assignments = deepcopy(grid)
     ranks["0b0"] = 0
     ranks["-0b1"] = -1
+
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if type(grid[i][j] is list):
+            if type(grid[i][j]) is list:
                 for k in range(len(grid[i][j])):
                     assignments[i][j][k] = ranks[grid[i][j][k]]
             else:
@@ -106,10 +118,17 @@ def make_count_grid(data):
     for i in range(len(data[0])):
         for j in range(len(data)):
             for k in range(len(data[i][j])):
-                try:
-                    data[i][j][k] = data[i][j][k].count("1")
-                except:
-                    data[i][j][k] = len(data[i][j][k])
+                if type(data[i][j][k]) is list:
+                    for l in range(len(data[i][j][k])):
+                        try:
+                            data[i][j][k] = data[i][j][k].count("1")
+                        except:
+                            data[i][j][k] = len(data[i][j][k])                
+                else:
+                    try:
+                        data[i][j][k] = data[i][j][k].count("1")
+                    except:
+                        data[i][j][k] = len(data[i][j][k])
 
     return data
 
@@ -120,7 +139,7 @@ def make_optimal_phenotype_grid(environment, phenotypes):
     for i in range(world_size[1]):
         for j in range(world_size[0]):
             for k in range(len(phenotypes[i][j])):
-                phenotype = phenotype_to_res_set(phenotypes[i][j][k])
+                phenotype = phenotype_to_res_set(phenotypes[i][j][k])#, environment.resources)
                 diff = len(environment[i][j].symmetric_difference(phenotype))
                 phenotypes[i][j][k] = diff
 
