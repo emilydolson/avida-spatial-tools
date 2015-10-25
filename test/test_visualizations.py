@@ -62,5 +62,6 @@ def test_paired_environment_phenotype_movie():
     paired_environment_phenotype_movie(env, phenotypes)
 
 if __name__ == "__main__":
-     test_paired_environment_phenotype_movie()
-     #test_color_percentages()
+    #test_paired_environment_phenotype_movie()
+    #test_color_percentages()
+    test_visualize_environment()

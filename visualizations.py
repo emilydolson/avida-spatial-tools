@@ -16,7 +16,7 @@ from parse_files import *
 #RES_SET = ["safe"]
 RES_SET = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]
 
-hues = [.1, .7]
+#hues = [.1, .7]
 hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
 #hues = [0, .075, .175, .2, .425, .575, .01, .5]
@@ -210,11 +210,16 @@ def color_array_by_hue_mix(value, arr, denom):
 
     if int(value, 2) > 0:
         
+        #Convert bits to list and reverse order to avoid issues with
+        #differing lengths
+        int_list = [int(i) for i in list(value[2:])]
+        int_list.reverse()
+
         #since this is a 1D array, we need the zeroth elements
         #of np.nonzero.
-        locs = np.nonzero(value[2:])[0]
+        locs = np.nonzero(int_list)[0]
         color = sum([hues[i] for i in locs])/float(len(locs))
-        
+
         arr[0,0,0] = color
         arr[0,0,1] = .9 + .1*((value.count("1"))/denom)
         arr[0,0,2] = .9 + .1*((value.count("1")+2)**2/100.0) 

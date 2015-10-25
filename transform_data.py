@@ -115,15 +115,15 @@ def make_count_grid(data):
     """
     data = deepcopy(data)
 
-    for i in range(len(data[0])):
+    for i in range(len(data[0])):        
         for j in range(len(data)):
             for k in range(len(data[i][j])):
                 if type(data[i][j][k]) is list:
                     for l in range(len(data[i][j][k])):
                         try:
-                            data[i][j][k] = data[i][j][k].count("1")
+                            data[i][j][k] = data[i][j][k][l].count("1")
                         except:
-                            data[i][j][k] = len(data[i][j][k])                
+                            data[i][j][k] = len(data[i][j][k][l])      
                 else:
                     try:
                         data[i][j][k] = data[i][j][k].count("1")
