@@ -72,11 +72,6 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
             [environment_file_identifier]_phenotype_overlay.mp4
     """
 
-    #So we don't have to keep initializig new arrays or screw up original data
-    phen_grid = deepcopy(phenotypes)
-    
-    types = get_ranks_for_environment_and_phenotypes(environment, phenotypes)
-
     #Create figure to do plotting
     fig = plt.figure(figsize=(20,20))
 
@@ -89,20 +84,15 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
         
     #This will be called to color niches, which are always in background
     def init():
-        plot_world(world, k, types)
+        plot_world(world, k)
         for p in patches:
             fig.gca().add_patch(p)
 
     #Change colors of circles as appropriate for new time step
     def animate(n):
-        print n
-        #Load in data from time step n
-        for i in range(len(data)):
-            for j in range(len(data[i])):
-                phen_grid[i][j] = data[i][j][n]
-
+        phen_grid = slice_3d_grid(phenotypes, n)
         #Recolor circles
-        plot_phens_blits(phen_grid, k, types, patches)
+        plot_phens_blits(phen_grid, k, patches)
 
         return patches,
 
@@ -141,10 +131,9 @@ def plot_phens_circles(phen_grid):
                         plt.gca().add_patch(plt.Circle((j,i), radius=(11-k)*.05, lw=.1 if first else 0, ec="black", facecolor=rgb))
                         first = False
 
-def plot_phens_blits(phen_grid, k, types, patches):
+def plot_phens_blits(phen_grid, k, patches):
     
-    assignments, n = assign_ranks_by_cluster(phen_grid, k, types)
-    grid = color_grid(assignments, k+1, True)
+    grid = color_grid(phen_grid, k, True)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):

@@ -47,7 +47,11 @@ def assign_ranks_to_grid(grid, ranks):
     ranks["-0b1"] = -1
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            assignments[i][j] = ranks[grid[i][j]]
+            if type(grid[i][j] is list):
+                for k in range(len(grid[i][j])):
+                    assignments[i][j][k] = ranks[grid[i][j][k]]
+            else:
+                assignments[i][j] = ranks[grid[i][j]]
 
     return assignments
 

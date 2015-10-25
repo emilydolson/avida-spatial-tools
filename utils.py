@@ -5,6 +5,15 @@ from copy import deepcopy
 import pysal
 import numpy as np
 
+def slice_3d_grid(grid, n):
+    phen_grid = initialize_grid((len(grid[0]), len(grid)), 0)
+
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            phen_grid[i][j] = grid[i][j][n]
+
+    return phen_grid
+
 def flatten_array(grid):
     grid = [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
     while type(grid[0]) is list:
