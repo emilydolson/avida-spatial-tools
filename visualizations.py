@@ -12,15 +12,9 @@ from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.animation
 from parse_files import *
+import seaborn as sns
 
-#RES_SET = ["safe"]
 RES_SET = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]
-
-#hues = [.1, .7]
-hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
-#hues = [.01, .1, .175, .375, .475, .575, .71, .8, .9]
-#hues = [0, .075, .175, .2, .425, .575, .01, .5]
-#random.shuffle(hues)
 
 
 def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func, name=""):
@@ -37,8 +31,10 @@ def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func
 
     vis_func(phenotypes, name)
 
-def heat_map(grid, denom, name):
-    grid = color_grid(grid, denom)
+def heat_map(grid, name, **kwargs):
+    denom, palette = get_kwargs(grid, kwargs)
+
+    grid = color_grid(grid, palette, denom)
     make_imshow_plot(grid, name)
 
 def optimal_phenotypes(env_file, grid_file, agg=mean):
@@ -80,11 +76,11 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
 
     for i in range(len(phenotypes)):
         for j in range(len(phenotypes[i])):
-            patches.append(plt.Circle((j,i), radius=.3, lw=2, ec="black", facecolor=None))
+            patches.append(plt.Circle((j,i), radius=.3, lw=2, ec="black", facecolor=None, zorder=2))
         
     #This will be called to color niches, which are always in background
     def init():
-        plot_world(environment, k)
+        plot_world(environment, denom=k)
         for p in patches:
             fig.gca().add_patch(p)
 
@@ -92,7 +88,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     def animate(n):
         phen_grid = slice_3d_grid(phenotypes, n)
         #Recolor circles
-        plot_phens_blits(phen_grid, k, patches)
+        plot_phens_blits(phen_grid, patches, denom=k)
 
         return patches,
 
@@ -104,40 +100,79 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     anim.save(environment.name + "_phenotype_overlay.mov")
     return anim
 
-def plot_phens(phen_grid, denom=9):
-    
-    grid = color_grid(phen_grid, denom, True)
+def get_kwargs(grid, kwargs, phenotypes=False):
+    denom = None
+    if "denom" in kwargs:
+        denom = kwargs["denom"]
+
+    if "palette" in kwargs:
+        palette = kwargs["palette"]
+        if denom is None:
+            denom = len(palette)
+    elif "environment" in kwargs:
+        if phenotypes:
+            palette = kwargs["environment"].task_palette
+            if denom is None:
+                denom = len(kwargs["environment"].tasks)
+        else:
+            palette = kwargs["environment"].resource_palette
+            if denom is None:
+                denom = len(kwargs["environment"].resources)
+
+    else:
+        elements = list(set(flatten_array(grid)))
+        length = len(elements)
+
+        if type(elements[0]) is str:
+            lengths = [len(el) for el in elements if not el.startswith("-")]
+            if max(lengths) < 5: #Mixing red and green 
+                length += 2 #is not pretty so let's avoid it
+
+        palette = sns.hls_palette(length, s=1)
+        denom = length
+    return denom, palette
+
+def plot_phens(phen_grid, **kwargs):
+
+    denom, palette = get_kwargs(phen_grid, kwargs, True)
+     
+    grid = color_grid(phen_grid, palette, denom)
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if grid[i][j] != [0,0,0]:
+            if tuple(grid[i][j]) != -1:
                 plt.gca().add_patch(plt.Circle((j,i), \
-                            radius=.3, lw=1, ec="black", facecolor=grid[i][j]))
+                radius=.3, lw=1, ec="black", facecolor=grid[i][j], zorder=2))
 
-def plot_phens_circles(phen_grid):
+def plot_phens_circles(phen_grid, **kwargs):
+
+    denom, palette = get_kwargs(phen_grid, kwargs, True)
+
+    n_tasks = len(palette)
     grid = phen_grid
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if grid[i][j] != "0b0":
+            if int(grid[i][j], 2) != 0:
                 first = True
-                for k in range(2, len(grid[i][j])):
-                    if int(grid[i][j][k]) == 1:
-                        arr = np.zeros((1,1,3))
-                        arr[0,0,0] = hues[k-2]
-                        arr[0,0,1] = 1
-                        arr[0,0,2] = 1
-                        rgb = matplotlib.colors.hsv_to_rgb(arr)
-                        rgb = rgb.flatten()
-                        plt.gca().add_patch(plt.Circle((j,i), radius=(11-k)*.05, lw=.1 if first else 0, ec="black", facecolor=rgb))
+                b_ind = grid[i][j].find("b")
+                phen = grid[i][j][b_ind+1:]
+                for k in range(len(phen)):
+                    if int(phen[k]) == 1:
+                        plt.gca().add_patch(
+                            plt.Circle(
+                                (j,i), radius=(n_tasks - k)*.05, \
+                                lw=.1 if first else 0, ec="black",\
+                                facecolor=palette[k], zorder=2+k))
                         first = False
 
-def plot_phens_blits(phen_grid, k, patches):
-    
-    grid = color_grid(phen_grid, k, True)
+def plot_phens_blits(phen_grid, patches, **kwargs):
+
+    denom, palette = get_kwargs(phen_grid, kwargs)    
+    grid = color_grid(phen_grid, palette, denom)
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             curr_patch = patches[i * len(grid[i]) + j]
-            if grid[i][j] == [0,0,0]:
+            if grid[i][j] == -1:
                curr_patch.set_visible(False)
             else:
                 curr_patch.set_facecolor(grid[i][j])
@@ -145,20 +180,20 @@ def plot_phens_blits(phen_grid, k, patches):
 
     return patches
 
-def plot_world(world, denom=9.0):
-
-    world = color_grid(world, denom, True)
+def plot_world(world, denom=None):
+    
+    world = color_grid(world, world.resource_palette, denom)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
-    plt.imshow(world, interpolation="none", hold=True)
+    plt.imshow(world, interpolation="none", hold=True, zorder=1)
     axes = plt.gca()
     axes.autoscale(False)
 
 def paired_environment_phenotype_grid(environment, phenotypes, k=15):
 
-    plot_world(environment, k)
-    plot_phens(phenotypes, k)
+    plot_world(environment, denom=k)
+    plot_phens(phenotypes, denom=k)
 
     plt.savefig("phenotype_niches_" + environment.name, dpi=1000)
 
@@ -170,44 +205,45 @@ def paired_environment_phenotype_grid_circles(environment, phenotypes):
     
     return plt.gcf()
 
-def color_grid(data, denom=9.0, mask_zeros = False):
+def color_grid(data, palette, denom=9.0):
     """
     Loads specified data into a grid to create a heat map of phenotypic
     complexity and location.
     """
     grid = []
+
+    try: 
+        #If this isn't numeric, don't bother with this block
+        float(data[0][0])
+
+        #This is continuous data - we need a colormap rather than palette
+        palette = matplotlib.colors.LinearSegmentedColormap.from_list(
+                "color_grid", palette)
+    except:
+        pass
+
     for row in range(len(data)):
         grid.append([])
         for col in range(len(data[row])):
             
-            arr = np.zeros((1,1,3))
-            arr[0,0,0] = int(not mask_zeros)
-            arr[0,0,1] = int(not mask_zeros)
-            arr[0,0,2] = int(not mask_zeros)
-
             if type(data[row][col]) is str:
-                arr = color_array_by_hue_mix(data[row][col], arr, denom)
+                rgb = color_array_by_hue_mix(data[row][col], palette)
             else:
-                arr = color_array_by_value(data[row][col], arr, denom)
+                rgb = color_array_by_value(data[row][col], palette, denom)
             
-            rgb = matplotlib.colors.hsv_to_rgb(arr)
-            grid[row].append(list(rgb[0][0]))
-
+            grid[row].append(rgb)
+    
     return grid
 
-def color_array_by_value(value, arr, denom):
+def color_array_by_value(value, palette, denom):
+    if value == -1:
+        return -1
+    if type(palette) is list:
+        return palette[value]
+    return palette(float(value)/float(denom))
+
+def color_array_by_hue_mix(value, palette):
     
-    if float(value) > 0:
-        arr[0,0,0] = (float(value)/denom)
-        arr[0,0,1] = 1
-        
-    if float(value) >= 0:
-        arr[0,0,2] = 1
-
-    return arr
-
-def color_array_by_hue_mix(value, arr, denom):
-
     if int(value, 2) > 0:
         
         #Convert bits to list and reverse order to avoid issues with
@@ -218,17 +254,22 @@ def color_array_by_hue_mix(value, arr, denom):
         #since this is a 1D array, we need the zeroth elements
         #of np.nonzero.
         locs = np.nonzero(int_list)[0]
-        color = sum([hues[i] for i in locs])/float(len(locs))
+        rgb_vals = [palette[i] for i in locs]
+    
+        rgb = [0, 0, 0]    
+        for val in rgb_vals:
+            for index in range(len(val)):
+                rgb[index] += val[index]
+            
+        for i in range(len(rgb)):
+            rgb[i] /= len(locs)
 
-        arr[0,0,0] = color
-        arr[0,0,1] = .9 + .1*((value.count("1"))/denom)
-        arr[0,0,2] = .9 + .1*((value.count("1")+2)**2/100.0) 
+        return tuple(rgb)
+        
+    if int(value, 2) == 0:
+        return (1, 1, 1)
 
-    else:
-        arr[0,0,1] *= value.count("1")/denom
-        arr[0,0,2] = int(int(value, 2) == 0)
-
-    return arr
+    return -1
 
 def color_percentages(file_list, file_name="color_percent.png", \
                       intensification_factor=1.2):
@@ -301,7 +342,7 @@ def color_percentages2(file_list):
 def make_imshow_plot(grid, name):
   plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
-  plt.imshow(grid, interpolation="none", aspect=1)
+  plt.imshow(grid, interpolation="nearest", aspect=1, zorder=1)
   plt.tight_layout()
   plt.savefig(name, dpi=500, bbox_inches="tight")
 

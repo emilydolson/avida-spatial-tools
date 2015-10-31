@@ -141,6 +141,8 @@ def parse_environment_file(filename, world_size=(60,60)):
     lines = infile.readlines()
     infile.close()
 
+    tasks = []
+
     #Find all spatial resources and record which cells they're in
     res_dict = {}
     for line in lines:
@@ -148,6 +150,10 @@ def parse_environment_file(filename, world_size=(60,60)):
             name, cells = parse_gradient(line, world_size)
         elif line.startswith("CELL"):
             name, cells = parse_cell(line, world_size)
+        elif line.startswith("REACTION"):
+            task = parse_reaction(line)
+            if task not in tasks:
+                tasks.append(task)
         else:
             continue
         
@@ -156,7 +162,15 @@ def parse_environment_file(filename, world_size=(60,60)):
     #Create a map of niches across the environment and return it
     grid = make_niche_grid(res_dict, world_size)    
 
-    return EnvironmentFile(grid, res_dict.keys(), world_size, filename)
+    return EnvironmentFile(grid, res_dict.keys(), world_size, filename, tasks)
+
+def parse_reaction(line):
+    """
+    Takes a string declaring a new reaction in an Avida environment file and
+    returns the name of the associated task.
+    """
+    sline = line.split()
+    return sline[2].strip()
 
 def parse_gradient(line, world_size):
     """
