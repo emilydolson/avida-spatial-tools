@@ -34,6 +34,15 @@ class EnvironmentFile:
             #and yellow than red and green
             self.resource_palette = sns.hls_palette(max(len(tasks), 4), s=1)
 
+        elif set(self.tasks).issubset(set(self.resources)):
+            self.task_palette = sns.hls_palette(max(len(tasks), 4), s=1)
+            self.resource_palette = sns.hls_palette(max(len(tasks), 4), s=1)
+            self.resource_palette += sns.color_palette("bone", 
+                                                    len(resources)-len(tasks))
+
+        elif set(self.tasks).issuperset(set(self.resources)):
+            self.task_palette = sns.hls_palette(max(len(tasks), 4), s=1)
+            self.resource_palette = sns.hls_palette(max(len(resources), 4), s=1)
         else:
             #Since we don't know anything in particular about the tasks
             #and resources, let's be color-blind friendly and keep the

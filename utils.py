@@ -50,35 +50,6 @@ def flatten_array(grid):
         grid = flatten_array(grid)
     return grid
 
-def do_clustering(types, max_clust):
-    #Fill in leading zeros to make all numbers same length.
-    ls = [list(t[2:]) for t in types]
-    prepend_zeros_to_lists(ls)
-
-    dist_matrix = pdist(ls, weighted_hamming)
-    clusters = hierarchicalcluster.complete(dist_matrix)
-    clusters = hierarchicalcluster.fcluster(clusters, max_clust, \
-                                            criterion="maxclust")
-
-    #Group members of each cluster together
-    cluster_dict = dict((c, []) for c in set(clusters))
-    for i in range(len(types)):
-        cluster_dict[clusters[i]].append(types[i])
-
-    return cluster_dict
-
-def rank_clusters(cluster_dict, types):
-    #Figure out the relative rank of each cluster
-    cluster_ranks = dict.fromkeys(cluster_dict.keys())
-    for key in cluster_dict:
-        cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
-
-    i = len(cluster_ranks)
-    for key in sorted(cluster_ranks, key=cluster_ranks.get):
-        cluster_ranks[key] = i
-        i -= 1
-
-    return cluster_ranks
 
 def prepend_zeros_to_lists(ls):
     longest = max([len(l) for l in ls])
@@ -105,7 +76,12 @@ def function_with_args(func, *args):
     return inner
 
 def convert_world_to_phenotype(world):
-    conversion_func = function_with_args(res_set_to_phenotype, world.resources)
+    if set(world.resources) != set(world.tasks):
+        print "Warning: world phenotypes don't correspond to phenotypes"
+    if set(world.resources).issubset(set(world.tasks)):
+        conversion_func = function_with_args(res_set_to_phenotype, world.tasks)
+    else:
+        conversion_func = function_with_args(res_set_to_phenotype, world.resources)
     grid = agg_grid(deepcopy(world), conversion_func)
     return grid
 

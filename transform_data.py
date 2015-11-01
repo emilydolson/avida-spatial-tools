@@ -10,6 +10,37 @@ def rank_environment_and_phenotypes(environment, phenotypes, k=15):
     return environment, phenotypes, n
 
 
+def do_clustering(types, max_clust):
+    #Fill in leading zeros to make all numbers same length.
+    ls = [list(t[t.find("b")+1:]) for t in types]
+    prepend_zeros_to_lists(ls)
+
+    dist_matrix = pdist(ls, weighted_hamming)
+    clusters = hierarchicalcluster.complete(dist_matrix)
+    clusters = hierarchicalcluster.fcluster(clusters, max_clust, \
+                                            criterion="maxclust")
+
+    #Group members of each cluster together
+    cluster_dict = dict((c, []) for c in set(clusters))
+    for i in range(len(types)):
+        cluster_dict[clusters[i]].append(types[i])
+
+    return cluster_dict
+
+def rank_clusters(cluster_dict, types):
+    #Figure out the relative rank of each cluster
+    cluster_ranks = dict.fromkeys(cluster_dict.keys())
+    for key in cluster_dict:
+        cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
+
+    i = len(cluster_ranks)
+    for key in sorted(cluster_ranks, key=cluster_ranks.get):
+        cluster_ranks[key] = i
+        i -= 1
+
+    return cluster_ranks
+
+
 def get_ranks_for_environment_and_phenotypes(environment, phenotypes, k=15):
     """
     Environment is expected to already have been converted to binary numbers
@@ -28,7 +59,7 @@ def get_ranks_for_environment_and_phenotypes(environment, phenotypes, k=15):
     ranks = generate_ranks(list(types), k)
     
     ranks["-0b1"] = -1 # The empty phenotype/niche should always be rank 0
-    ranks["0b0"] = 0 # The empty phenotype/niche should always be rank 0
+    ranks["0b0"] = -1 # The empty phenotype/niche should always be rank 0
 
     return ranks
     

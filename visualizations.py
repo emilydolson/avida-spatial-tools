@@ -33,8 +33,12 @@ def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func
 
 def heat_map(grid, name, **kwargs):
     denom, palette = get_kwargs(grid, kwargs)
+    if "mask_zeros" in kwargs:
+        mask_zeros = kwargs["mask_zeros"]
+    else:
+        mask_zeros = False
 
-    grid = color_grid(grid, palette, denom)
+    grid = color_grid(grid, palette, denom, mask_zeros)
     make_imshow_plot(grid, name)
 
 def optimal_phenotypes(env_file, grid_file, agg=mean):
@@ -182,7 +186,7 @@ def plot_phens_blits(phen_grid, patches, **kwargs):
 
 def plot_world(world, denom=None):
     
-    world = color_grid(world, world.resource_palette, denom)
+    world = color_grid(world, world.resource_palette, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -205,7 +209,7 @@ def paired_environment_phenotype_grid_circles(environment, phenotypes):
     
     return plt.gcf()
 
-def color_grid(data, palette, denom=9.0):
+def color_grid(data, palette, denom=9.0, mask_zeros=True):
     """
     Loads specified data into a grid to create a heat map of phenotypic
     complexity and location.
@@ -219,6 +223,7 @@ def color_grid(data, palette, denom=9.0):
         #This is continuous data - we need a colormap rather than palette
         palette = matplotlib.colors.LinearSegmentedColormap.from_list(
                 "color_grid", palette)
+        palette.set_bad(alpha=0)
     except:
         pass
 
@@ -229,15 +234,19 @@ def color_grid(data, palette, denom=9.0):
             if type(data[row][col]) is str:
                 rgb = color_array_by_hue_mix(data[row][col], palette)
             else:
-                rgb = color_array_by_value(data[row][col], palette, denom)
+                rgb = color_array_by_value(data[row][col], palette, denom, mask_zeros)
             
             grid[row].append(rgb)
     
     return grid
 
-def color_array_by_value(value, palette, denom):
+def color_array_by_value(value, palette, denom, mask_zeros):
     if value == -1:
         return -1
+    if value == 0 and mask_zeros:
+        if type(palette) is list:
+            return (1, 1, 1)
+        return (1, 1, 1, 1)
     if type(palette) is list:
         return palette[value]
     return palette(float(value)/float(denom))

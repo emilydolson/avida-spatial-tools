@@ -16,7 +16,7 @@ def test_make_species_cluster_grid():
     grid = load_grid_data(grid)
     grid, n = assign_ranks_by_cluster(grid, 12)
     grid = agg_grid(grid)
-    heat_map(grid, "species_cluster_grid")
+    heat_map(grid, "species_cluster_grid", mask_zeros=True)
 
 def test_make_species_hue_grid():
     grid = "test/grid_task.100000.dat"
@@ -30,7 +30,23 @@ def test_paired_environment_phenotype_grid():
 
     world = parse_environment_file(env, (11,5))
     phenotypes = load_grid_data(grid)
+    #world, phenotypes, n = rank_environment_and_phenotypes(world, phenotypes, 20)
+    world = convert_world_to_phenotype(world)
+    phenotypes, n = assign_ranks_by_cluster(phenotypes, 12)
+    phenotypes = agg_grid(phenotypes)
+    
+    paired_environment_phenotype_grid(world, phenotypes)
+    plt.clf()
+
+def test_paired_environment_phenotype_grid2():
+    env = "test/example_environment2.cfg"
+    grid = "test/grid_task.100000.dat"
+
+    world = parse_environment_file(env, (11,5))
+    phenotypes = load_grid_data(grid)
+    #world = convert_world_to_phenotype(world)
     world, phenotypes, n = rank_environment_and_phenotypes(world, phenotypes, 20)
+    
     phenotypes = agg_grid(phenotypes)
     
     paired_environment_phenotype_grid(world, phenotypes)
@@ -59,14 +75,15 @@ def test_optimal_phenotypes():
 def test_paired_environment_phenotype_movie():
     phenotypes = load_grid_data(glob.glob("test/grid_task.*.dat"))
     env = parse_environment_file("test/example_environment.cfg", (11,5))
-
-    env, phenotypes, n = rank_environment_and_phenotypes(env, phenotypes, 20)
-    
+    env = convert_world_to_phenotype(env)
+    #env, phenotypes, n = rank_environment_and_phenotypes(env, phenotypes, 20)
+    #print env.grid
+    phenotypes, n = assign_ranks_by_cluster(phenotypes, 12)
     paired_environment_phenotype_movie(env, phenotypes)
 
 if __name__ == "__main__":
-    #test_paired_environment_phenotype_movie()
+    test_paired_environment_phenotype_movie()
     #test_color_percentages()
     #test_visualize_environment()
     #test_paired_environment_phenotype_grid_circles()
-    test_paired_environment_phenotype_grid()
+    #test_paired_environment_phenotype_grid()
