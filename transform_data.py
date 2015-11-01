@@ -170,7 +170,7 @@ def make_optimal_phenotype_grid(environment, phenotypes):
     for i in range(world_size[1]):
         for j in range(world_size[0]):
             for k in range(len(phenotypes[i][j])):
-                phenotype = phenotype_to_res_set(phenotypes[i][j][k])#, environment.resources)
+                phenotype = phenotype_to_res_set(phenotypes[i][j][k], environment.tasks)
                 diff = len(environment[i][j].symmetric_difference(phenotype))
                 phenotypes[i][j][k] = diff
 

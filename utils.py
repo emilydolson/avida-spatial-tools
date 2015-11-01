@@ -36,6 +36,11 @@ def agg_grid(grid, agg=None):
     return grid
 
 def slice_3d_grid(grid, n):
+    """
+    Takes a three dimensional array and an integer (n) and returns a 2d array
+    containing the Nth value from the 3rd dimension at each location in the 
+    grid.
+    """
     phen_grid = initialize_grid((len(grid[0]), len(grid)), 0)
 
     for i in range(len(grid)):
@@ -45,6 +50,10 @@ def slice_3d_grid(grid, n):
     return phen_grid
 
 def flatten_array(grid):
+    """
+    Takes a multi-dimensional array and returns a 1 dimensional array with the
+    same contents.
+    """
     grid = [grid[i][j] for i in range(len(grid)) for j in range(len(grid[i]))]
     while type(grid[0]) is list:
         grid = flatten_array(grid)
@@ -52,6 +61,10 @@ def flatten_array(grid):
 
 
 def prepend_zeros_to_lists(ls):
+    """
+    Takes a list of lists and appends 0s to the beggining of each sub_list
+    until they are all the same length. Used for sign-extending binary numbers.
+    """
     longest = max([len(l) for l in ls])
 
     for i in range(len(ls)):
@@ -71,11 +84,28 @@ def dist(p1, p2):
     return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 def function_with_args(func, *args):
+    """
+    Returns a function that calls a function with the specified arguments.
+    The returned function still takes one argument representing the first
+    positional argument. 
+
+    This is mostly a helper function for using agg_grid with functions
+    requiring more information than the cell contents.
+    """
     def inner(arg):
         return func(arg, *args)
     return inner
 
 def convert_world_to_phenotype(world):
+    """
+    Converts sets indicating the resources present in a single cell to binary
+    strings (bit order is based on the order of resources in world.resources).
+
+    TODO: Figure out how to handle relationship between resources and tasks
+
+    Inputs: world - an EnvironmentFile object with a grid of resource sets
+    Returns: an EnvironmentFile object with a grid of binary strings
+    """
     if set(world.resources) != set(world.tasks):
         print "Warning: world phenotypes don't correspond to phenotypes"
     if set(world.resources).issubset(set(world.tasks)):
@@ -86,8 +116,17 @@ def convert_world_to_phenotype(world):
     return grid
 
 
-def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
+def phenotype_to_res_set(phenotype, resources):
+    """
+    Converts a binary string to a set containing the resources indicated by
+    the bits in the string.
 
+    Inputs: phenotype - a binary string
+            resources - a list of string indicating which resources correspond
+                        to which indices of the phenotype
+
+    returns: A set of strings indicating resources
+    """
     assert(phenotype[0:2] == "0b")
     phenotype = phenotype[2:]
     #Fill in leading zeroes
@@ -103,7 +142,17 @@ def phenotype_to_res_set(phenotype, resources = ["equ", "xor", "nor", "andn", "o
     assert(phenotype.count("1") == len(res_set))
     return res_set
 
-def res_set_to_phenotype(res_set, full_list = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]):
+def res_set_to_phenotype(res_set, full_list):
+    """
+    Converts a set of strings indicating resources to a binary string where
+    the positions of 1s indicate which resources are present.
+
+    Inputs: res_set - a set of strings indicating which resources are present
+            full_list - a list of strings indicating all resources which could
+                        could be present, and the order in which they should
+                        map to bits in the phenotype
+    returns: A binary string
+    """
 
     phenotype = len(full_list) * ["0"]
 

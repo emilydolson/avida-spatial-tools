@@ -8,20 +8,17 @@ from environment_file import EnvironmentFile
 
 def load_grid_data(file_list, sort=True):
     """
-    Helper function to load data from multiple grid_task files.
+    Loads data from one or multiple grid_task files.
 
     Arguments:
         file_list - either a string or a list of strings indicating files to
                     load data from. Files are assumed to be in grid_task.dat 
                     format (space delimited values, one per cell).
 
-        length    - grid_task files contain decimal numbers representing which 
-                    tasks an organism does by treating each one in the binary
-                    representation of the number as representing one task that
-                    is being performed. The length indicates how many places
-                    this number is allowed to have so that we can backfill 0s.
-
-                   TODO: Maybe we don't actually need length?
+        sort      - If you're making a movie, you want the files to be in
+                    chronological order. By default, they will be sorted.
+                    If for some reason you don't want them in chronological
+                    order, set sort to False.
 
     Returns: A three-dimensional array. The first dimension is columns, the
     second is rows. At each row,column index in the array is another list
