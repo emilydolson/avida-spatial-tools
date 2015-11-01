@@ -1,6 +1,14 @@
 # avida-spatial-tools
 Some useful Python scripts for working with spatial structure in Avida
 
+#Dependencies:
+* Python2.x
+* Matplotlib
+* Seaborn
+* Numpy
+* Scipy
+* Pysal
+
 #Workflow:
 
 * Parse the data:
