@@ -1,5 +1,5 @@
-numpy
-scipy
+#numpy
+#scipy
 matplotlib
 seaborn
 pysal
