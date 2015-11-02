@@ -1,10 +1,3 @@
-__author__ = "Emily Dolson"
-__copyright__ = "Copyright 2014, Emily Dolson"
-__version__ = "0.9"
-__maintainer__ = "Emily Dolson"
-__email__ = "EmilyLDolson@gmail.com"
-__status__ = "Development"
-
 import random, glob, re, string
 from matplotlib.collections import PatchCollection
 from transform_data import *
@@ -14,22 +7,6 @@ import matplotlib.animation
 from parse_files import *
 import seaborn as sns
 
-RES_SET = ["equ", "xor", "nor", "andn", "or", "orn", "and", "nand", "not"]
-
-
-def make_visualization(env_files, grid_files, grid_transform, grid_agg, vis_func, name=""):
-
-    phenotypes = load_grid_data(grid_files)
-    world_size = (len(phenotypes[0]), len(phenotypes))
-
-    worlds = parse_environment_file_list(env_files, world_size)[0]
-
-    phenotypes = grid_transform(worlds, phenotypes)
-    phenotypes = agg_grid(phenotypes, grid_agg)
-    
-    name = name + "_" + worlds.name + "_" + vis_func.__name__ + ".png" 
-
-    vis_func(phenotypes, name)
 
 def heat_map(grid, name, **kwargs):
     denom, palette = get_kwargs(grid, kwargs)
@@ -40,10 +17,6 @@ def heat_map(grid, name, **kwargs):
 
     grid = color_grid(grid, palette, denom, mask_zeros)
     make_imshow_plot(grid, name)
-
-def optimal_phenotypes(env_file, grid_file, agg=mean):
-
-    make_visualization(env_file, grid_file, make_optimal_phenotype_grid, mean, heat_map, "optimal_phenotypes")
 
 def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     """
