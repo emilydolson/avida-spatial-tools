@@ -1,5 +1,4 @@
 import random, glob, re, string
-from matplotlib.collections import PatchCollection
 from transform_data import *
 from matplotlib import pyplot as plt
 import matplotlib
