@@ -2,10 +2,27 @@ import seaborn as sns
 
 class EnvironmentFile:
     """
-    A class to hold data related to a single environment file
+    A class to hold data related to a single environment file.
+    This is generally called by parse_environment_file()
     """
 
     def __init__(self, grid, resources, size, name, tasks):
+        """
+        Arguments:
+        - grid: a 2d array of sets of strings representing which resources
+          are present in which cells.
+        
+        - resources: a list of strings representing all of the resources 
+          found anywhere in the world
+        
+        - size: a tuple containing the x and y dimensions of the grid
+        
+        - name: a string representing the name of the file this came from
+        
+        - tasks: a list of strings representing all of the tasks rewarded by
+          the environment file (extracted from reactions), in order of 
+          appearance.
+        """
         self.grid = grid
         self.resources = resources
         self.size = size
