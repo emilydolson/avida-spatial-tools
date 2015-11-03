@@ -17,7 +17,7 @@ def heat_map(grid, name, **kwargs):
     grid = color_grid(grid, palette, denom, mask_zeros)
     make_imshow_plot(grid, name)
 
-def paired_environment_phenotype_movie(environment, phenotypes, k=15):
+def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     """
     Makes an animation overlaying colored circles representing phenotypes over
     an imshow() plot indicating the resources present in each cell. Colors
@@ -56,7 +56,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
         
     #This will be called to color niches, which are always in background
     def init():
-        plot_world(environment, denom=k)
+        plot_world(environment, **kwargs)
         for p in patches:
             fig.gca().add_patch(p)
 
@@ -64,7 +64,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     def animate(n):
         phen_grid = slice_3d_grid(phenotypes, n)
         #Recolor circles
-        plot_phens_blits(phen_grid, patches, denom=k)
+        plot_phens_blits(phen_grid, patches, **kwargs)
 
         return patches,
 
@@ -77,6 +77,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, k=15):
     return anim
 
 def get_kwargs(grid, kwargs, phenotypes=False):
+    
     denom = None
     if "denom" in kwargs:
         denom = kwargs["denom"]
@@ -85,15 +86,20 @@ def get_kwargs(grid, kwargs, phenotypes=False):
         palette = kwargs["palette"]
         if denom is None:
             denom = len(palette)
-    elif "environment" in kwargs:
-        if phenotypes:
-            palette = kwargs["environment"].task_palette
-            if denom is None:
-                denom = len(kwargs["environment"].tasks)
+    elif "environment" in kwargs or isinstance(grid, EnvironmentFile):
+        if "environment" in kwargs:
+            env = kwargs["environment"]
         else:
-            palette = kwargs["environment"].resource_palette
+            env = grid
+
+        if phenotypes:
+            palette = env.task_palette
             if denom is None:
-                denom = len(kwargs["environment"].resources)
+                denom = len(env.tasks)
+        else:
+            palette = env.resource_palette
+            if denom is None:
+                denom = len(env.resources)
 
     else:
         elements = list(set(flatten_array(grid)))
@@ -156,9 +162,9 @@ def plot_phens_blits(phen_grid, patches, **kwargs):
 
     return patches
 
-def plot_world(world, denom=None):
-    
-    world = color_grid(world, world.resource_palette, denom, True)
+def plot_world(world, **kwargs):
+    denom, palette = get_kwargs(world, kwargs, False)
+    world = color_grid(world, palette, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
     plt.tight_layout()
@@ -166,15 +172,15 @@ def plot_world(world, denom=None):
     axes = plt.gca()
     axes.autoscale(False)
 
-def paired_environment_phenotype_grid(environment, phenotypes, k=15):
+def paired_environment_phenotype_grid(environment, phenotypes, **kwargs):
 
-    plot_world(environment, denom=k)
-    plot_phens(phenotypes, denom=k)
+    plot_world(environment, **kwargs)
+    plot_phens(phenotypes, **kwargs)
 
     plt.savefig("phenotype_niches_" + environment.name, dpi=1000)
 
-def paired_environment_phenotype_grid_circles(environment, phenotypes):
-    plot_world(environment)
+def paired_environment_phenotype_grid_circles(environment, phenotypes,**kwargs):
+    plot_world(environment, **kwargs)
     plot_phens_circles(phenotypes)
 
     plt.savefig("phenotype_niches_circles"+environment.name, dpi=1000)
@@ -252,7 +258,7 @@ def color_array_by_hue_mix(value, palette):
 
     return -1
 
-def color_percentages(file_list, file_name="color_percent.png", \
+def color_percentages(file_list, n_tasks=9, file_name="color_percent.png", \
                       intensification_factor=1.2):
     """
     Creates an image in which each cell in the avida grid is represented as
@@ -281,19 +287,22 @@ def color_percentages(file_list, file_name="color_percent.png", \
         grid[i] = [[]]*len(data[0])*3
 
     #Color grid
-    for i in range(len(data[0])):
-        for j in range(len(data)):
+    for i in range(len(data)):
+        for j in range(len(data[i])):
             for k in range(3): #create grid of sub-cells
                 for l in range(3):
-                    #build a color in matplotlib's preferred hsv format
-                    arr = np.zeros((1, 1, 3))
-                    arr[0, 0, 1] = float(data[i][j][k*3 + l]) \
-                           *intensification_factor #saturation, based on data
-                    arr[0, 0, 0] = (k*3 +l)/9.0 #hue based on task
-                    arr[0, 0, 2] = 1 #value is always 1
-                    rgb = matplotlib.colors.hsv_to_rgb(arr) #convert to rgb
+                    if len(data[i][j]) > k*3+l:
+                        #build a color in matplotlib's preferred hsv format
+                        arr = np.zeros((1, 1, 3))
+                        arr[0, 0, 1] = float(data[i][j][k*3 + l]) \
+                            *intensification_factor #saturation, based on data
+                        arr[0, 0, 0] = (k*3 +l)/9.0 #hue based on task
+                        arr[0, 0, 2] = 1 #value is always 1
+                        rgb = matplotlib.colors.hsv_to_rgb(arr) #convert to rgb
 
-                    grid[i*3+k][j*3+l] = list(rgb[0][0])
+                        grid[i*3+k][j*3+l] = list(rgb[0][0])
+                    else:
+                        grid[i*3+k][j*3+l] = (1, 1, 1, 1)
 
     make_imshow_plot(grid, "colorpercentages")
 

@@ -16,6 +16,13 @@ def test_visualize_environment():
 def test_color_percentages():
     fig = plt.figure()
     file_list = glob.glob("tests/grid_task.*.dat")
+    color_percentages(file_list, 2)
+    return fig
+
+@pytest.mark.mpl_image_compare
+def test_color_percentages2():
+    fig = plt.figure()
+    file_list = glob.glob("tests/grid_task.*.dat")
     color_percentages2(file_list)
     return fig
 
@@ -67,7 +74,7 @@ def test_paired_environment_phenotype_grid2():
     
     phenotypes = agg_grid(phenotypes)
     
-    paired_environment_phenotype_grid(world, phenotypes)
+    paired_environment_phenotype_grid(world, phenotypes, denom=n)
     return fig
 
 #@image_comparison(baseline_images=['phenotype_niches_circlesexample_environment.png'])
