@@ -13,9 +13,8 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 # Install packages
 install:
-- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib seaborn
+- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib seaborn pytest nose
 - pip install pysal
-- pip install -U pytest
 - pip install pytest-mpl
 - py.test --version
 
