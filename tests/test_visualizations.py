@@ -8,8 +8,18 @@ def test_visualize_environment():
     env = "tests/example_environment.cfg"
     environment = parse_environment_file(env, (11,5))
     environment = convert_world_to_phenotype(environment)
-    heat_map(environment, "visualize_environment")
+    heat_map(environment, "visualize_environment", mask_zeros=True)
     #grid = visualize_environment(env, (11,5), "test_env.png")
+    return fig
+
+@pytest.mark.mpl_image_compare
+def test_n_tasks_heatmap():
+    fig = plt.figure()
+    grid = "tests/grid_task.100000.dat"
+    grid = load_grid_data(grid)
+    grid = make_count_grid(grid)
+    grid = agg_grid(grid, mean)
+    heat_map(grid, "n_tasks")
     return fig
 
 @pytest.mark.mpl_image_compare
@@ -32,7 +42,7 @@ def test_make_species_cluster_grid():
     grid = "tests/grid_task.100000.dat"
     grid = load_grid_data(grid)
     grid, n = assign_ranks_by_cluster(grid, 12)
-    grid = agg_grid(grid)
+    grid = agg_grid(grid, median)
     heat_map(grid, "species_cluster_grid", mask_zeros=True)
     return fig
 
@@ -77,6 +87,22 @@ def test_paired_environment_phenotype_grid2():
     paired_environment_phenotype_grid(world, phenotypes, denom=n)
     return fig
 
+@pytest.mark.mpl_image_compare
+def test_paired_environment_phenotype_grid3():
+    fig = plt.figure()
+    env = "tests/conservation-9patches_10each_environment.cfg"
+    grid = "tests/grid_task60by60.0.dat"
+
+    world = parse_environment_file(env, (60,60))
+    phenotypes = load_grid_data(grid)
+
+    world = convert_world_to_phenotype(world)
+    phenotypes = agg_grid(phenotypes)
+    
+    paired_environment_phenotype_grid(world, phenotypes)
+    return fig
+
+
 #@image_comparison(baseline_images=['phenotype_niches_circlesexample_environment.png'])
 @pytest.mark.mpl_image_compare
 def test_paired_environment_phenotype_grid_circles():
@@ -115,6 +141,6 @@ def test_paired_environment_phenotype_movie():
 if __name__ == "__main__":
     #test_paired_environment_phenotype_movie()
     #test_color_percentages()
-    #test_visualize_environment()
-    test_paired_environment_phenotype_grid_circles()
-    #test_paired_environment_phenotype_grid()
+    test_visualize_environment()
+    #test_paired_environment_phenotype_grid_circles()
+    #test_paired_environment_phenotype_grid3()

@@ -102,9 +102,10 @@ def get_kwargs(grid, kwargs, phenotypes=False):
                 denom = len(env.resources)
 
     else:
-        length = get_pallete_length(elements)
+        length = get_pallete_length(grid)
         palette = sns.hls_palette(length, s=1)
         denom = length
+        
     return denom, palette
 
 def plot_phens(phen_grid, **kwargs):
@@ -112,6 +113,7 @@ def plot_phens(phen_grid, **kwargs):
     denom, palette = get_kwargs(phen_grid, kwargs, True)
      
     grid = color_grid(phen_grid, palette, denom)
+    
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if tuple(grid[i][j]) != -1:
@@ -236,7 +238,7 @@ def color_array_by_hue_mix(value, palette):
         locs = np.nonzero(int_list)[0]
         rgb_vals = [palette[i] for i in locs]
     
-        rgb = [0, 0, 0]    
+        rgb = [0]*len(rgb_vals[0]) #We don't know if it's rgb or rgba    
         for val in rgb_vals:
             for index in range(len(val)):
                 rgb[index] += val[index]
@@ -247,7 +249,7 @@ def color_array_by_hue_mix(value, palette):
         return tuple(rgb)
         
     if int(value, 2) == 0:
-        return (1, 1, 1)
+        return (1, 1, 1) if len(palette[0])==3 else (1,1,1,1)
 
     return -1
 

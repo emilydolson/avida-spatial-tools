@@ -223,8 +223,8 @@ def make_count_grid(data):
     """
     data = deepcopy(data)
 
-    for i in range(len(data[0])):        
-        for j in range(len(data)):
+    for i in range(len(data)):        
+        for j in range(len(data[i])):
             for k in range(len(data[i][j])):
                 if type(data[i][j][k]) is list:
                     for l in range(len(data[i][j][k])):

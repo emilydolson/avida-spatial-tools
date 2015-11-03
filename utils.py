@@ -5,7 +5,7 @@ from copy import deepcopy
 import pysal
 import numpy as np
 
-def get_pallete_length(elements):
+def get_pallete_length(grid):
     """
     Takes a 2d grid and figures out how many different elements are in it, so
     that we know how big to make the palette. Also avoids the unfortunate
