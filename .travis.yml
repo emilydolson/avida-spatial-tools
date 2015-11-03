@@ -15,5 +15,7 @@ before_install:
 install:
 - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib seaborn
 - pip install pysal
+- pip install -U pytest
+- pip install pytest-mpl
 
-script: ./test_images.sh
+script: py.test --mpl-baseline-path=tests/baseline_images --mpl
