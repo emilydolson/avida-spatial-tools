@@ -17,5 +17,6 @@ install:
 - pip install pysal
 - pip install -U pytest
 - pip install pytest-mpl
+- py.test --version
 
 script: py.test --mpl-baseline-path=tests/baseline_images --mpl
