@@ -14,12 +14,13 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
   - sudo apt-get update
   - sudo apt-get install ffmpeg
-  - pip install python-coveralls
 # Install packages
 install:
 - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib seaborn pytest nose
 - pip install pysal
+- pip install python-coveralls
 - pip install pytest-mpl
+- pip install pytest-cov
 - py.test --version
 before_script:
   - "export DISPLAY=:99.0"
