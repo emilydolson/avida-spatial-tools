@@ -5,6 +5,23 @@ from copy import deepcopy
 import pysal
 import numpy as np
 
+def get_pallete_length(elements):
+    """
+    Takes a 2d grid and figures out how many different elements are in it, so
+    that we know how big to make the palette. Also avoids the unfortunate
+    red/green palette that results from too few elements.
+
+    Returns int indicating the length the palette should have.
+    """
+    elements = list(set(flatten_array(grid)))
+    length = len(elements)
+    
+    if type(elements[0]) is str:
+        lengths = [len(el) for el in elements if not el.startswith("-")]
+        if max(lengths) < 5: #Mixing red and green 
+            length += 2 #is not pretty so let's avoid it
+    return length
+
 def agg_grid(grid, agg=None):
     """
     Many functions return a 2d list with a complex data type in each cell.

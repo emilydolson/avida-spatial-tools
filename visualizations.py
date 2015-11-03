@@ -102,14 +102,7 @@ def get_kwargs(grid, kwargs, phenotypes=False):
                 denom = len(env.resources)
 
     else:
-        elements = list(set(flatten_array(grid)))
-        length = len(elements)
-
-        if type(elements[0]) is str:
-            lengths = [len(el) for el in elements if not el.startswith("-")]
-            if max(lengths) < 5: #Mixing red and green 
-                length += 2 #is not pretty so let's avoid it
-
+        length = get_pallete_length(elements)
         palette = sns.hls_palette(length, s=1)
         denom = length
     return denom, palette
@@ -304,9 +297,7 @@ def color_percentages(file_list, n_tasks=9, file_name="color_percent.png", \
                     else:
                         grid[i*3+k][j*3+l] = (1, 1, 1, 1)
 
-    make_imshow_plot(grid, "colorpercentages")
-
-    return grid
+    return make_imshow_plot(grid, "colorpercentages")
 
 def color_percentages2(file_list):
     """
