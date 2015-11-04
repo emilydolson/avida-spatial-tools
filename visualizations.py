@@ -71,7 +71,8 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
 
     for i in range(len(phenotypes)):
         for j in range(len(phenotypes[i])):
-            patches.append(plt.Circle((j,i), radius=.3, lw=2, ec="black", facecolor=None, zorder=2))
+            patches.append(plt.Circle((j,i), radius=.3, \
+                            lw=2, ec="black", facecolor=None, zorder=2))
         
     #This will be called to color niches, which are always in background
     def init():
@@ -95,42 +96,6 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     
     anim.save(environment.name + "_phenotype_overlay.mov")
     return anim
-
-def get_kwargs(grid, kwargs, phenotypes=False):
-    """
-    Helper function to figure out what denom and palette to use, based on the
-    kwargs and the grid being plotted. The optional (default: false) argument
-    indicates whether the grid contains phenotypes, as opposed to resources.
-    """
-    denom = None
-    if "denom" in kwargs:
-        denom = kwargs["denom"]
-
-    if "palette" in kwargs:
-        palette = kwargs["palette"]
-        if denom is None:
-            denom = len(palette)
-    elif "environment" in kwargs or isinstance(grid, EnvironmentFile):
-        if "environment" in kwargs:
-            env = kwargs["environment"]
-        else:
-            env = grid
-
-        if phenotypes:
-            palette = env.task_palette
-            if denom is None:
-                denom = len(env.tasks)
-        else:
-            palette = env.resource_palette
-            if denom is None:
-                denom = len(env.resources)
-
-    else:
-        length = get_pallete_length(grid)
-        palette = sns.hls_palette(length, s=1)
-        denom = length
-        
-    return denom, palette
 
 def plot_phens(phen_grid, **kwargs):
     """

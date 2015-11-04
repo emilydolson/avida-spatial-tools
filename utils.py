@@ -4,6 +4,43 @@ from math import sqrt, log, floor, ceil
 from copy import deepcopy
 import pysal
 import numpy as np
+import seaborn as sns
+
+def get_kwargs(grid, kwargs, phenotypes=False):
+    """
+    Helper function to figure out what denom and palette to use, based on the
+    kwargs and the grid being plotted. The optional (default: false) argument
+    indicates whether the grid contains phenotypes, as opposed to resources.
+    """
+    denom = None
+    if "denom" in kwargs:
+        denom = kwargs["denom"]
+
+    if "palette" in kwargs:
+        palette = kwargs["palette"]
+        if denom is None:
+            denom = len(palette)
+    elif "environment" in kwargs or isinstance(grid, EnvironmentFile):
+        if "environment" in kwargs:
+            env = kwargs["environment"]
+        else:
+            env = grid
+
+        if phenotypes:
+            palette = env.task_palette
+            if denom is None:
+                denom = len(env.tasks)
+        else:
+            palette = env.resource_palette
+            if denom is None:
+                denom = len(env.resources)
+
+    else:
+        length = get_pallete_length(grid)
+        palette = sns.hls_palette(length, s=1)
+        denom = length
+        
+    return denom, palette
 
 def get_pallete_length(grid):
     """
