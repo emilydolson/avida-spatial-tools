@@ -8,6 +8,22 @@ import seaborn as sns
 
 
 def heat_map(grid, name, **kwargs):
+    """
+    Generic function for making a heat map based on the values in a grid.
+    
+    Arguments: grid - the grid of numbers or binary strings to be visualized.
+               name - string indicating what the file storing the image
+                      should be called.
+
+    kwargs:
+               palette - a seaborn palette (list of RGB values) indicating
+                         how to color values. Will be converted to a continuous
+                         colormap if necessary
+               denom   - the maximum value of numbers in the grid (only used
+                         if the grid actually contains numbers). This is used
+                         to normalize values and use the full dynamic range of
+                         the color pallete.
+    """
     denom, palette = get_kwargs(grid, kwargs)
     if "mask_zeros" in kwargs:
         mask_zeros = kwargs["mask_zeros"]
@@ -20,29 +36,32 @@ def heat_map(grid, name, **kwargs):
 def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     """
     Makes an animation overlaying colored circles representing phenotypes over
-    an imshow() plot indicating the resources present in each cell. Colors
-    are determined by clustering all represented combinations of resources/tasks
-    (in phenotypes or niches) using complete link UPGMA. Distance is calculated
-    using a weighted Hamming distance that prioritizes left-most bits but
-    excludes EQU (this is kind of focused on the resource heterogeneity project
-    and should probably be changed).
+    an imshow() plot indicating the resources present in each cell. By default,
+    color is determined using the palettes in the EnvironmentFile object
+    passed as the first parameter. The easiest way to change color palettes
+    is to assign new palettes to environment.task_palette and 
+    environment.resource_palette before calling this function. If either the
+    environment or phenotypes grids contain integers greater than 1, you should
+    pass a `denom` keyword argument indicating how to normalize them. Using
+    differnet denoms for the environment and phenotypes is not currently
+    supported (if you need to, you should probably just divide everything by
+    the appropraite denoms before passing them to this funciton).
 
     Inputs:
-          species_files - a list of strings indicating the names of all of the
-          files describing phenotype locations to be included in the animation.
-          These should all be of the grid_tasks format and order should be 
-          specified by the number between "grid_tasks" and the file extension 
-          (as is created by Avida by default).
+          environment - an EnvironmentFile object indicatng the distribution
+                         of resources and the appropriate palettes to use.
+          phenotypes  - a 2d array of numbers or binary strings representing
+                        the placement of phenotypes across the environment
 
-          env_file - The name of an Avida environment file (string).
-
-          k (default: 15) - the number of clusters of phenotypes/niches to make.
-               
+    kwargs:
+          denom - an integer indicating how to normalize numbers in the
+                  environment and phenotype grids if neccesary.
     Outputs:
          Returns a matplotlib animation object. 
          Saves animation in the file: 
             [environment_file_identifier]_phenotype_overlay.mp4
     """
+    denom, palette = get_kwargs(environment, kwargs)
 
     #Create figure to do plotting
     fig = plt.figure(figsize=(20,20))
@@ -56,7 +75,8 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
         
     #This will be called to color niches, which are always in background
     def init():
-        plot_world(environment, **kwargs)
+        plot_world(environment, palette = environment.resource_palette, 
+                   denom = denom)
         for p in patches:
             fig.gca().add_patch(p)
 
@@ -64,8 +84,8 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     def animate(n):
         phen_grid = slice_3d_grid(phenotypes, n)
         #Recolor circles
-        plot_phens_blits(phen_grid, patches, **kwargs)
-
+        plot_phens_blits(phen_grid, patches, 
+                         palette = environment.task_palette, denom = denom)
         return patches,
 
     #Do actual animation
@@ -77,7 +97,11 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     return anim
 
 def get_kwargs(grid, kwargs, phenotypes=False):
-    
+    """
+    Helper function to figure out what denom and palette to use, based on the
+    kwargs and the grid being plotted. The optional (default: false) argument
+    indicates whether the grid contains phenotypes, as opposed to resources.
+    """
     denom = None
     if "denom" in kwargs:
         denom = kwargs["denom"]
@@ -109,7 +133,12 @@ def get_kwargs(grid, kwargs, phenotypes=False):
     return denom, palette
 
 def plot_phens(phen_grid, **kwargs):
+    """
+    Plots circles colored according to the values in phen_grid.
 
+    -1 serves as a sentinel value, indicating that a circle should not be
+    plotted in that location.
+    """
     denom, palette = get_kwargs(phen_grid, kwargs, True)
      
     grid = color_grid(phen_grid, palette, denom)
@@ -121,7 +150,25 @@ def plot_phens(phen_grid, **kwargs):
                 radius=.3, lw=1, ec="black", facecolor=grid[i][j], zorder=2))
 
 def plot_phens_circles(phen_grid, **kwargs):
+    """
+    Plots phenotypes represented as concentric circles. Each circle represents
+    one task that the phenotype can perform, with larger circles representing
+    more complex tasks.
 
+    Arguments: phen_grid - a 2D array of strings representing binary numbers
+  
+    kwargs:
+               palette - a seaborn palette (list of RGB values) indicating
+                         how to color values. Will be converted to a continuous
+                         colormap if necessary
+               denom   - the maximum value of numbers in the grid (only used
+                         if the grid actually contains numbers). This is used
+                         to normalize values and use the full dynamic range of
+                         the color pallete.
+
+    TODO: come up with way to represent organisms that don't do any tasks.
+
+    """
     denom, palette = get_kwargs(phen_grid, kwargs, True)
 
     n_tasks = len(palette)
@@ -142,6 +189,11 @@ def plot_phens_circles(phen_grid, **kwargs):
                         first = False
 
 def plot_phens_blits(phen_grid, patches, **kwargs):
+    """
+    A version of plot_phens designed to be used in animations. Takes a 2D array
+    of phenotypes and a list of matplotlib patch objects that have already
+    been added to the current axes and recolors the patches based on the array.
+    """
 
     denom, palette = get_kwargs(phen_grid, kwargs)    
     grid = color_grid(phen_grid, palette, denom)
@@ -158,6 +210,19 @@ def plot_phens_blits(phen_grid, patches, **kwargs):
     return patches
 
 def plot_world(world, **kwargs):
+    """
+    Addes a heat-map representing the data in world (an EnvironmentFile object)
+    to the current plot.
+
+    kwargs:
+               palette - a seaborn palette (list of RGB values) indicating
+                         how to color values. Will be converted to a continuous
+                         colormap if necessary
+               denom   - the maximum value of numbers in the grid (only used
+                         if the grid actually contains numbers). This is used
+                         to normalize values and use the full dynamic range of
+                         the color pallete.
+    """
     denom, palette = get_kwargs(world, kwargs, False)
     world = color_grid(world, palette, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
@@ -168,15 +233,77 @@ def plot_world(world, **kwargs):
     axes.autoscale(False)
 
 def paired_environment_phenotype_grid(environment, phenotypes, **kwargs):
+    """
+    Plots the given environment (EnvironmentFile object) and phenotypes
+    (2d array of numbers or binary strings) onto the same image and saves 
+    the image based on the name of the environment file. The environment file
+    will be represented by coloring square cells, while the phenotypes are
+    circles overlaid on top.
 
-    plot_world(environment, **kwargs)
-    plot_phens(phenotypes, **kwargs)
+    By default, color is determined using the palettes in the EnvironmentFile 
+    object passed as the first parameter. The easiest way to change color 
+    palettes is to assign new palettes to environment.task_palette and 
+    environment.resource_palette before calling this function. If either the
+    environment or phenotypes grids contain integers greater than 1, you should
+    pass a `denom` keyword argument indicating how to normalize them. Using
+    differnet denoms for the environment and phenotypes is not currently
+    supported (if you need to, you should probably just divide everything by
+    the appropraite denoms before passing them to this funciton).
 
-    plt.savefig("phenotype_niches_" + environment.name, dpi=1000)
+    Inputs:
+          environment - an EnvironmentFile object indicatng the distribution
+                         of resources and the appropriate palettes to use.
+          phenotypes  - a 2d array of numbers or binary strings representing
+                        the placement of phenotypes across the environment
+
+    kwargs:
+          denom - an integer indicating how to normalize numbers in the
+                  environment and phenotype grids if neccesary.
+
+    
+    """
+
+    denom, palette = get_kwargs(environment, kwargs)
+
+    plot_world(environment, palette = environment.resource_palette, denom=denom)
+    plot_phens(phenotypes, palette = environment.task_palette, denom=denom)
+
+    plt.savefig("phenotype_niches_" + environment.name + ".png", dpi=2000)
 
 def paired_environment_phenotype_grid_circles(environment, phenotypes,**kwargs):
-    plot_world(environment, **kwargs)
-    plot_phens_circles(phenotypes)
+    """
+    Plots the given environment (EnvironmentFile object) and phenotypes
+    (2d array of binary strings) onto the same image and saves 
+    the image based on the name of the environment file. The environment file
+    will be represented by coloring square cells, while the phenotypes are
+    represented as concentric circles indicating the set of tasks the organism
+    at that location can perform.
+
+    By default, color is determined using the palettes in the EnvironmentFile 
+    object passed as the first parameter. The easiest way to change color 
+    palettes is to assign new palettes to environment.task_palette and 
+    environment.resource_palette before calling this function. If either the
+    environment or phenotypes grids contain integers greater than 1, you should
+    pass a `denom` keyword argument indicating how to normalize them. Using
+    differnet denoms for the environment and phenotypes is not currently
+    supported (if you need to, you should probably just divide everything by
+    the appropraite denoms before passing them to this funciton).
+
+    Inputs:
+          environment - an EnvironmentFile object indicatng the distribution
+                         of resources and the appropriate palettes to use.
+          phenotypes  - a 2d array of binary strings representing
+                        the placement of phenotypes across the environment
+
+    kwargs:
+          denom - an integer indicating how to normalize numbers in the
+                  environment and phenotype grids if neccesary.
+
+    """
+    denom, palette = get_kwargs(environment, kwargs)
+
+    plot_world(environment, palette = environment.resource_palette, denom=denom)
+    plot_phens_circles(phenotypes, palette = environment.task_palette)
 
     plt.savefig("phenotype_niches_circles"+environment.name, dpi=1000)
     
@@ -184,8 +311,22 @@ def paired_environment_phenotype_grid_circles(environment, phenotypes,**kwargs):
 
 def color_grid(data, palette, denom=9.0, mask_zeros=True):
     """
-    Loads specified data into a grid to create a heat map of phenotypic
-    complexity and location.
+    Convert the given data (2d array of numbers or binary strings) to a 2d
+    array of RGB or RGBA values which can then be visualized as a heat map.
+
+    Arguments:
+    data - 2d array of numbers or binary strings
+    palette - a seaborn palette (list of RGB values) indicating how to convert 
+              data to colors. Will be converted to a continuous colormap if 
+              necessary. This should generally be the length of the longest 
+              binary string or the highest possible number
+    denom - if the data is composed of numbers rather than binary strings,
+            this number will indicate how to normalize the data to [0, 1] should
+            it be neccessary.
+    mask_zeros - Boolean indicating whether 0s should be colored white rather
+                 than the color specified by the palette. -1s always yield
+                 -1 so that missing data can be handled appropriately.
+
     """
     grid = []
 
@@ -207,25 +348,38 @@ def color_grid(data, palette, denom=9.0, mask_zeros=True):
             if type(data[row][col]) is str:
                 rgb = color_array_by_hue_mix(data[row][col], palette)
             else:
-                rgb = color_array_by_value(data[row][col], palette, denom, mask_zeros)
+                rgb = color_array_by_value(data[row][col], palette, denom, \
+                                           mask_zeros)
             
             grid[row].append(rgb)
     
     return grid
 
 def color_array_by_value(value, palette, denom, mask_zeros):
-    if value == -1:
+    """
+    Figure out the appropriate RGB or RGBA color for the given numerical
+    value based on the palette, denom, and whether zeros should be masked.
+    """
+    if value == -1: # sentinel value
         return -1
-    if value == 0 and mask_zeros:
+
+    if value == 0 and mask_zeros: #This value is masked
         if type(palette) is list:
             return (1, 1, 1)
         return (1, 1, 1, 1)
-    if type(palette) is list:
+
+    if type(palette) is list: #This is a palette
         return palette[value]
+    
+    #This is continuous data so the palette is actually a colormap
     return palette(float(value)/float(denom))
 
 def color_array_by_hue_mix(value, palette):
-    
+    """
+    Figure out the appropriate color for a binary string value by averaging
+    the colors corresponding the indices of each one that it contains. Makes
+    for visualizations that intuitively show patch overlap.
+    """
     if int(value, 2) > 0:
         
         #Convert bits to list and reverse order to avoid issues with
@@ -323,11 +477,15 @@ def color_percentages2(file_list):
 
 
 def make_imshow_plot(grid, name):
-  plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
+    """
+    Takes a grid of RGB or RGBA values and a filename to save the figure into.
+    Generates a figure by coloring all grid cells appropriately.
+    """
+    plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
-  plt.imshow(grid, interpolation="nearest", aspect=1, zorder=1)
-  plt.tight_layout()
-  plt.savefig(name, dpi=500, bbox_inches="tight")
+    plt.imshow(grid, interpolation="nearest", aspect=1, zorder=1)
+    plt.tight_layout()
+    plt.savefig(name, dpi=1000, bbox_inches="tight")
 
 
 

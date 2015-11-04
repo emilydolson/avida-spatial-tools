@@ -247,7 +247,7 @@ def median(ls):
     """
     Takes a list and returns the median.
     """
-    ls.sort()
+    ls = sorted(ls)
     return ls[int(floor(len(ls)/2.0))]
 
 def string_avg(strings, binary=True):

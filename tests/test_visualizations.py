@@ -67,8 +67,11 @@ def test_paired_environment_phenotype_grid():
     world = convert_world_to_phenotype(world)
     phenotypes, n = assign_ranks_by_cluster(phenotypes, 12)
     phenotypes = agg_grid(phenotypes)
-    
-    paired_environment_phenotype_grid(world, phenotypes)
+    length = get_pallete_length(phenotypes)
+    palette = sns.hls_palette(length, s=1)
+    world.task_palette = palette
+ 
+    paired_environment_phenotype_grid(world, phenotypes, denom=n)
     return fig
 
 @pytest.mark.mpl_image_compare
@@ -79,11 +82,11 @@ def test_paired_environment_phenotype_grid2():
 
     world = parse_environment_file(env, (11,5))
     phenotypes = load_grid_data(grid)
-    #world = convert_world_to_phenotype(world)
     world, phenotypes, n = rank_environment_and_phenotypes(world, phenotypes, 20)
-    
     phenotypes = agg_grid(phenotypes)
-    
+    palette = sns.hls_palette(n, s=1)
+    world.task_palette = palette
+    world.resource_palette = palette
     paired_environment_phenotype_grid(world, phenotypes, denom=n)
     return fig
 
@@ -113,6 +116,9 @@ def test_paired_environment_phenotype_grid_circles():
     world = convert_world_to_phenotype(world)
     phenotypes = load_grid_data(grid)
     phenotypes = agg_grid(phenotypes)
+    length = get_pallete_length(phenotypes)
+    palette = sns.hls_palette(length, s=1)
+    world.task_palette = palette
     paired_environment_phenotype_grid_circles(world, phenotypes)
     return fig
 
@@ -141,6 +147,6 @@ def test_paired_environment_phenotype_movie():
 if __name__ == "__main__":
     #test_paired_environment_phenotype_movie()
     #test_color_percentages()
-    test_visualize_environment()
+    #test_visualize_environment()
     #test_paired_environment_phenotype_grid_circles()
-    #test_paired_environment_phenotype_grid3()
+    test_paired_environment_phenotype_grid()
