@@ -4,6 +4,7 @@ from math import sqrt, log, floor, ceil
 from copy import deepcopy
 import pysal
 import numpy as np
+from environment_file import *
 import seaborn as sns
 
 def get_kwargs(grid, kwargs, phenotypes=False):
