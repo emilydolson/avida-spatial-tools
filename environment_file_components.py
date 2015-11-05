@@ -118,12 +118,7 @@ def calcTightAnchors(args, d, patches):
         ys = [centerPoint[1] + int(floor(d/2.0))+d*i for i in range(dsout)]\
              + [centerPoint[1] - (int(ceil(d/2.0))+d*i) for i in range(dsout)]
 
-        for i in xs:
-            anchors.append((i, max(ys)))
-            anchors.append((i, min(ys)))
-        for i in ys:
-            anchors.append((max(xs), i))
-            anchors.append((min(xs), i))
+        pairwise_point_combination(xs, ys, anchors)
 
         if d != 0:
             anchors = list(set(anchors))
@@ -139,14 +134,22 @@ def calcTightAnchors(args, d, patches):
                                         - d*i for i in range(dsout)]
         ys = [centerPoint[1] + d*i for i in range(dsout)] + [centerPoint[1] \
                                         - d*i for i in range(dsout)]
-        for i in xs:
-            anchors.append((i, max(ys)))
-            anchors.append((i, min(ys)))
-        for i in ys:
-            anchors.append((max(xs), i))
-            anchors.append((min(xs), i))
+
+        pairwise_point_combination(xs, ys, anchors)
 
         return anchors + calcTightAnchors(d, patches-2)
+
+def pairwise_point_combinations(xs, ys, anchors):
+    """
+    Does an in-place addition of the four points that can be composed by
+    combining coordinates from the two lists to the given list of anchors
+    """
+    for i in xs:
+        anchors.append((i, max(ys)))
+        anchors.append((i, min(ys)))
+    for i in ys:
+        anchors.append((max(xs), i))
+        anchors.append((min(xs), i))
 
 def random_patch(args, size):
     start_point = [random.randrange(0,args.worldSize), 
