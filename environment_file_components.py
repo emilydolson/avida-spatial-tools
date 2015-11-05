@@ -77,6 +77,27 @@ def calcRandomAnchors(args, inworld=True):
 
     return anchors
 
+def get_surrounding_coord_even(coord, d, dsout):
+    return  [coord + int(floor(d/2.0))+d*i for i in range(dsout)]\
+             + [coord - (int(ceil(d/2.0))+d*i) for i in range(dsout)]
+
+def get_surrounding_coord_odd(coord, d, dsout):
+    return [coord + d*i for i in range(dsout)] +\
+           [coord - d*i for i in range(dsout)]
+
+def add_anchors(centerPoint, d, dsout, anchors, even=True):
+
+    if even:
+        xs = get_surrounding_coord_even(centerPoint[0], d, dsout)
+        ys = get_surrounding_coord_even(centerPoint[0], d, dsout)
+
+    else:
+        xs = get_surrounding_coord_odd(centerPoint[0], d, dsout)
+        ys = get_surrounding_coord_odd(centerPoint[0], d, dsout)
+
+    pairwise_point_combination(xs, ys, anchors)
+    
+
 def calcTightAnchors(args, d, patches):
     """
     Recursively generates the number of anchor points specified in the 
@@ -86,46 +107,30 @@ def calcTightAnchors(args, d, patches):
     centerPoint = (int(args.worldSize/2), int(args.worldSize/2))
     anchors = []
     if patches == 0:
-        return anchors
+        pass
+
     elif patches == 1:
         anchors.append(centerPoint)
-        return anchors
            
     elif patches%2 == 0:
         dsout = (patches-2)/2 + 1
-
-        xs = [centerPoint[0] + int(floor(d/2.0))+d*i for i in range(dsout)]\
-             + [centerPoint[0] - (int(ceil(d/2.0))+d*i) for i in range(dsout)]
-        ys = [centerPoint[1] + int(floor(d/2.0))+d*i for i in range(dsout)]\
-             + [centerPoint[1] - (int(ceil(d/2.0))+d*i) for i in range(dsout)]
-
-        pairwise_point_combination(xs, ys, anchors)
-
+        add_anchors(centerPoint, d, dsout, anchors, True)
         if d != 0:
             anchors = list(set(anchors))
         anchors.sort()
-
-        if dsout == 1:
-            return anchors
-
-        return (anchors + calcTightAnchors(d, patches-2))[:patches*patches] 
-        #to cut off the extras in the case where d=0
+        if dsout != 1:
+            return (anchors + calcTightAnchors(d, patches-2))[:patches*patches] 
+            #to cut off the extras in the case where d=0
 
     else:
         #Note - an odd number of args.patchesPerSide requires that there be 
         #a patch at the centerpoint
         dsout = (patches-1)/2
-        xs = [centerPoint[0] + d*i for i in range(dsout)] + [centerPoint[0] \
-                                        - d*i for i in range(dsout)]
-        ys = [centerPoint[1] + d*i for i in range(dsout)] + [centerPoint[1] \
-                                        - d*i for i in range(dsout)]
+        add_anchors(centerPoint, d, dsout, anchors, False)
+        if dsout != 1:
+            return anchors + calcTightAnchors(d, patches-2)
 
-        pairwise_point_combination(xs, ys, anchors)
-
-        if dsout == 1:
-            return anchors
-
-        return anchors + calcTightAnchors(d, patches-2)
+    return anchors
 
 def pairwise_point_combinations(xs, ys, anchors):
     """
