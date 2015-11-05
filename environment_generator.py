@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+#WORK IN PROGRESS - do not use!
+
 #This program allows you to automatically generate environment files with
 #complex spatial resource layouts
 
