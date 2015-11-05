@@ -1,4 +1,4 @@
-from utils import *
+from avidaspatial import *
 
 def test_mode():
     assert(mode([1,1,1,2,3]) == 1)

@@ -6,7 +6,7 @@ from utils import *
 from copy import deepcopy
 from environment_file import EnvironmentFile
 
-def load_grid_data(file_list, sort=True):
+def load_grid_data(file_list, data_type="binary", sort=True):
     """
     Loads data from one or multiple grid_task files.
 
@@ -14,6 +14,9 @@ def load_grid_data(file_list, sort=True):
         file_list - either a string or a list of strings indicating files to
                     load data from. Files are assumed to be in grid_task.dat 
                     format (space delimited values, one per cell).
+
+        data_type - a string representing what type of data is in the file.
+                    Either "binary", "int", "float", or "string".
 
         sort      - If you're making a movie, you want the files to be in
                     chronological order. By default, they will be sorted.
@@ -46,7 +49,17 @@ def load_grid_data(file_list, sort=True):
         for i in range(world_size[1]):
             lines[i] = lines[i].split()
             for j in range(world_size[0]):
-                val = bin(int(lines[i][j]))
+                if data_type == "binary":
+                    val = bin(int(lines[i][j]))
+                elif data_type == "float":
+                    val = float(lines[i][j])
+                elif data_type == "int":
+                    val = int(lines[i][j])
+                elif data_type == "string":
+                    val = str(lines[i][j])
+                else:
+                    print "Unsupported data_type passed to load_grid"
+                    return
                 data[i][j].append(val)
 
         infile.close()

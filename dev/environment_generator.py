@@ -8,7 +8,7 @@
 import argparse
 import random
 from math import sqrt, log, floor, ceil
-from utils import *
+from avidaspatial import *
 
 def get_args(cli=[]):
     parser = argparse.ArgumentParser(description=

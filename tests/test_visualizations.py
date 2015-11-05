@@ -1,4 +1,4 @@
-from visualizations import *
+from avidaspatial import *
 import pytest
 from matplotlib.testing.decorators import image_comparison
 
