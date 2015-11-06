@@ -1,9 +1,9 @@
 import random, glob, re, string
-from transform_data import *
 from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.animation
-from parse_files import *
+from utils import *
+from transform_data import *
 import seaborn as sns
 
 

@@ -12,6 +12,6 @@ setup(name='avidaspatial',
       author_email="EmilyLDolson@gmail.com",
       url="https://github.com/emilydolson/avida-spatial-tools",
       packages=["avidaspatial"],
-      keywords = ["avida"]
+      keywords = ["avida"],
       download_url = "https://github.com/emilydolson/avida-spatial-tools/tarball/1.0",
       )
