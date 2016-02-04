@@ -110,7 +110,7 @@ def plot_phens(phen_grid, **kwargs):
     
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if tuple(grid[i][j]) != -1:
+            if grid[i][j] != -1 and tuple(grid[i][j]) != -1:
                 plt.gca().add_patch(plt.Circle((j,i), \
                 radius=.3, lw=1, ec="black", facecolor=grid[i][j], zorder=2))
 
@@ -140,7 +140,7 @@ def plot_phens_circles(phen_grid, **kwargs):
     grid = phen_grid
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if int(grid[i][j], 2) != 0:
+            if grid[i][j] != -1 and int(grid[i][j], 2) != 0:
                 first = True
                 b_ind = grid[i][j].find("b")
                 phen = grid[i][j][b_ind+1:]
@@ -192,7 +192,7 @@ def plot_world(world, **kwargs):
     world = color_grid(world, palette, denom, True)
     plt.tick_params(labelbottom="off", labeltop="off", labelleft="off", \
             labelright="off", bottom="off", top="off", left="off", right="off")
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.imshow(world, interpolation="none", hold=True, zorder=1)
     axes = plt.gca()
     axes.autoscale(False)
