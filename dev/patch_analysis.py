@@ -1,6 +1,5 @@
 from math import sqrt, pi, floor, ceil
-from utils import *
-from avidaSpatialTools import *
+from avidaspatial import *
 import sys, glob
 
 def area(patch):
@@ -18,6 +17,18 @@ def perimeter(patch, world_size=60):
         neighbors = get_rook_neighbors(cell, world_size)
         neighbors = [n for n in neighbors if n not in patch]
         edge += len(neighbors)
+
+    return edge
+
+def get_edge_locations(patch, world_size=60):
+    
+    edge = [] #list of cells on edge
+
+    for cell in patch:
+        neighbors = get_rook_neighbors(cell, world_size)
+        neighbors = [n for n in neighbors if n not in patch]
+        if neighbors:
+            edge.append(cell)
 
     return edge
         
@@ -69,7 +80,6 @@ def centroid(patch):
 def radius_of_gyration(patch):
     cent = centroid(patch)
     dist_sum = float(sum([dist(cell, cent) for cell in patch]))
-
     return dist_sum/len(patch)
     
 def perimeter_area_ratio(patch):
@@ -79,7 +89,7 @@ def shape_index(patch):
     perim = float(perimeter(patch))
     patch_area = float(area(patch))
 
-    print "perim", perim, "area", patch_area, "ratio", perim/patch_area
+    #print "perim", perim, "area", patch_area, "ratio", perim/patch_area
 
     return (.25*perim)/sqrt(patch_area)
     
@@ -166,11 +176,60 @@ def contiguity_index(patch):
     #13 is the maximum value that can be added for any given cell
     return (contiguity/patch_area - 1) / (13-1)
 
-def core_area(patch, distance):
-    pass
+def core_area(patch, distance, world_size=60):
+    edge = get_edge_locations(patch, world_size)
+    core_area = 0
 
-def number_core_areas(patch, distance):
-    pass
+    for cell in patch:
+        dist_to_edge = min([toroidal_dist(cell, other, world_size, world_size)\
+                            for other in edge])
+        if dist_to_edge > distance:
+            core_area += 1
+    return core_area
+
+def number_core_areas(patch, distance, world_size=60):
+    core_patch = []
+    edge = get_edge_locations(patch, world_size)
+
+    for cell in patch:
+        dist_to_edge = min([toroidal_dist(cell, other, world_size, world_size)\
+                            for other in edge])
+        if dist_to_edge >= distance:
+            core_patch.append(cell)
+
+    return traverse_core(core_patch, world_size)
+
+def traverse_core(core_area, world_size=60):
+    """
+    Treat cells in core_area like a graph and traverse it to
+    see how many connected components there are.
+    """
+
+    if not core_area:
+        return 0
+    curr = core_area[0]
+    core_area = core_area[1:]
+    to_explore = []
+    n_cores = 1
+
+    while core_area:
+        neighbors = [cell for cell in get_moore_neighbors(curr, world_size)]
+
+        for n in neighbors:
+            if n in core_area:
+                core_area.remove(n)
+                to_explore.append(n)
+        
+        if to_explore:
+            curr = to_explore.pop()
+        else:
+            n_cores += 1
+            curr = core_area.pop()
+        
+
+    return n_cores
+        
+    
 
 def core_area_index(patch, distance):
     core = float(core_area(patch, distance))
