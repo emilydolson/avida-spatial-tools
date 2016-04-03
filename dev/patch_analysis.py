@@ -1,6 +1,9 @@
 from math import sqrt, pi, floor, ceil
-from avidaspatial import *
+from avidaspatial.utils import *
 import sys, glob
+from collections import deque
+import numpy as np
+from scipy.spatial import ConvexHull
 
 def area(patch):
     return len(patch)
@@ -13,8 +16,9 @@ def perimeter(patch, world_size=60):
     an edge.
     """
     edge = 0
+    patch = set([tuple(i) for i in patch])
     for cell in patch:
-        neighbors = get_rook_neighbors(cell, world_size)
+        neighbors = [tuple(i) for i in get_rook_neighbors(cell, world_size)]
         neighbors = [n for n in neighbors if n not in patch]
         edge += len(neighbors)
 
@@ -23,14 +27,19 @@ def perimeter(patch, world_size=60):
 def get_edge_locations(patch, world_size=60):
     
     edge = [] #list of cells on edge
+    patch = set([tuple(i) for i in patch])
 
     for cell in patch:
-        neighbors = get_rook_neighbors(cell, world_size)
-        neighbors = [n for n in neighbors if n not in patch]
-        if neighbors:
+        if isedge(cell, patch, world_size):
             edge.append(cell)
 
     return edge
+
+def isedge(cell, patch, world_size=60):
+    neighbors = [tuple(i) for i in get_rook_neighbors(cell, world_size)]
+    neighbors = [n for n in neighbors if n not in patch]
+    return bool(neighbors)
+
         
 def get_rook_neighbors(cell, world_size=60):
     neighbors = [ [cell[0]+1, cell[1]], [cell[0]-1, cell[1]], 
@@ -55,7 +64,7 @@ def get_moore_neighbors(cell, world_size=60):
                     neighbors[-1][j] += world_size
                 elif neighbors[-1][j] >= world_size:
                     neighbors[-1][j] -= world_size
-        
+
     neighbors.remove(cell)
     return neighbors
 
@@ -85,16 +94,19 @@ def radius_of_gyration(patch):
 def perimeter_area_ratio(patch):
     return float(perimeter(patch))/float(area(patch))
 
-def shape_index(patch):
-    perim = float(perimeter(patch))
+def shape_index(patch, perim = None):
+    if perim is None:
+        perim = float(perimeter(patch))
     patch_area = float(area(patch))
 
     #print "perim", perim, "area", patch_area, "ratio", perim/patch_area
 
     return (.25*perim)/sqrt(patch_area)
     
-def fractal_dimension(patch):
-    perim = .25 * float(perimeter(patch))
+def fractal_dimension(patch, perim=None):
+    if perim is None:
+        perim = float(perimeter(patch))
+    perim *= .25
     patch_area = float(area(patch))
 
     if patch_area == 1:
@@ -122,12 +134,21 @@ def related_circumscribing_circle(patch, formula=True):
     patch_area = float(area(patch))
     max_dist = 0.0
     cell_pair = (None,None)
-    for cell1 in patch:
-        for cell2 in patch:
-            max_dist = max(dist(cell1, cell2), max_dist)
-            cell_pair = (cell1, cell2)
 
-    radius = max_dist/2.0
+    try:
+        hull = ConvexHull(patch)
+        edge = list(np.array(patch)[hull.vertices])
+    except:
+        edge = patch
+
+    for i, cell1 in enumerate(edge):
+        for j, cell2 in enumerate(edge[i+1:]):
+            squared_dist = squared_toroidal_dist(cell1, cell2)
+            if squared_dist > max_dist:
+                max_dist = squared_dist
+                cell_pair = (cell1, cell2)
+
+    radius = sqrt(max_dist)/2.0 #only take sqrt once
 
     if radius == 0:
         #This is a 1-cell patch - manually return 0
@@ -160,16 +181,17 @@ def related_circumscribing_circle(patch, formula=True):
 
 def contiguity_index(patch):
     patch_area = float(area(patch))
+    patch = set([tuple(i) for i in patch])
     contiguity = 0.0
 
     for cell in patch:
-        for neighbor in [[cell[0]-1,cell[1]], [cell[0]+1,cell[1]], 
-                         [cell[0], cell[1]-1], [cell[0], cell[1]+1]]:
+        for neighbor in [(cell[0]-1,cell[1]), (cell[0]+1,cell[1]), 
+                         (cell[0], cell[1]-1), (cell[0], cell[1]+1)]:
             if neighbor in patch:
                 contiguity += 2
 
-        for neighbor in [[cell[0]-1,cell[1]-1], [cell[0]+1,cell[1]-1], 
-                         [cell[0]-1, cell[1]+1], [cell[0]+1, cell[1]+1]]:
+        for neighbor in [(cell[0]-1,cell[1]-1), (cell[0]+1,cell[1]-1), 
+                         (cell[0]-1, cell[1]+1), (cell[0]+1, cell[1]+1)]:
             if neighbor in patch:
                 contiguity += 1
 
@@ -183,7 +205,8 @@ def core_area(patch, distance, world_size=60):
     for cell in patch:
         dist_to_edge = min([toroidal_dist(cell, other, world_size, world_size)\
                             for other in edge])
-        if dist_to_edge > distance:
+        
+        if dist_to_edge >= distance:
             core_area += 1
     return core_area
 
@@ -197,7 +220,48 @@ def number_core_areas(patch, distance, world_size=60):
         if dist_to_edge >= distance:
             core_patch.append(cell)
 
+    return len(traverse_core(core_patch, world_size))
+
+
+def get_core_areas(patch, distance, world_size=60):
+    core_patch = []
+    #edge = get_edge_locations(patch, world_size)
+    squared_distance = distance*distance
+
+    patch = set([tuple(i) for i in patch])
+
+    for cell in patch:
+       
+                    
+        if isedge(cell, patch, world_size):
+            dist_to_edge = 0
+        else:
+            queue = deque()
+            curr = cell
+            seen = set([])            
+            while True:
+                neighbors = [tuple(i) for i in \
+                             get_moore_neighbors(list(curr), world_size)]
+
+                for n in neighbors:
+                    if n in patch and n not in seen:
+                        queue.append(n)
+                        seen.add(n)
+
+                if isedge(queue[0], patch, world_size):
+                    dist_to_edge = min([toroidal_dist(cell, \
+                                                      other, \
+                                                      world_size, world_size)\
+                                        for other in queue])
+                    break
+
+                curr = queue.popleft()                    
+
+        if dist_to_edge >= squared_distance: #squared distance is more efficient
+            core_patch.append(cell)
+
     return traverse_core(core_patch, world_size)
+
 
 def traverse_core(core_area, world_size=60):
     """
@@ -206,28 +270,30 @@ def traverse_core(core_area, world_size=60):
     """
 
     if not core_area:
-        return 0
+        return []
+    core_area = [tuple(i) for i in core_area]
     curr = core_area[0]
-    core_area = core_area[1:]
+    core_area = set(core_area[1:])
     to_explore = []
-    n_cores = 1
+    cores = [[curr]]
 
     while core_area:
-        neighbors = [cell for cell in get_moore_neighbors(curr, world_size)]
+        neighbors = [tuple(i) for i in\
+                     get_moore_neighbors(list(curr), world_size)]
 
         for n in neighbors:
             if n in core_area:
                 core_area.remove(n)
                 to_explore.append(n)
-        
+                cores[-1].append(n)
+
         if to_explore:
             curr = to_explore.pop()
         else:
-            n_cores += 1
+            cores.append([])
             curr = core_area.pop()
         
-
-    return n_cores
+    return cores
         
     
 

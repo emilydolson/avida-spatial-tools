@@ -132,6 +132,35 @@ def dict_increment(d, key, amount):
     else:
         d[key] = amount
      
+def squared_toroidal_dist(p1, p2, world_x = 60, world_y = 60):
+    """
+    Separated out because sqrt has a lot of overhead
+    """
+    halfx = world_x/2.0
+    if world_x == world_y:
+        halfy = halfx
+    else:
+        halfy = world_y/2.0
+
+    deltax = p1[0] - p2[0]
+    if deltax < -halfx:
+        deltax += world_x
+    elif deltax > halfx:
+        deltax -= world_x
+    
+    deltay = p1[1] - p2[1]
+    if deltay < -halfy:
+        deltay += world_y
+    elif deltay > halfy:
+        deltay -= world_y
+
+    return deltax*deltax + deltay*deltay
+
+def toroidal_dist(p1, p2, world_x = 60, world_y = 60):
+    return sqrt(squared_toroidal_dist(p1, p2, world_x, world_y))
+    #return sqrt(min((p1[0] - p2[0])**2, (p1[0]+world_x - p2[0])**2) + \
+    #            min((p1[1] - p2[1])**2, (p1[1]+world_y - p2[1])**2))
+
 def dist(p1, p2):
     """
     Returns the distance between the two given tuples.
