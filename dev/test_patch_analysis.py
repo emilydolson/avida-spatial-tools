@@ -33,3 +33,6 @@ def test_get_rook_neighbors():
     expected = [[0,59], [59,0], [1,0], [0,1]]
     expected.sort()
     assert(rook==expected)
+
+def test_related_circumscribing_circle():
+    pass

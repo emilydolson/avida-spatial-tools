@@ -5,15 +5,15 @@ import scipy.spatial.distance
 import numpy as np
 import matplotlib.pyplot as plt
 
-POP_SIZE = 50
-GENERATIONS = 10
-THRESHOLD = .5
+POP_SIZE = 100
+GENERATIONS = 5000
+THRESHOLD = 50
 MUTATION_RATE = .05
 CROSSOVER_PROB = .05
 WORLD_X = 60
 WORLD_Y = 60
-K = 15
-TOURNAMENT_SIZE = 2
+K = 5
+TOURNAMENT_SIZE = 10
 
 ALL_CELLS = set([(x,y) for x in range(WORLD_X) for y in range(WORLD_Y)])
 
@@ -41,6 +41,7 @@ class Patch:
         cores = pa.traverse_core(self.cells, WORLD_X)
         patch = max(cores, key=len)
         self.patch = patch
+        self.grid = cells_to_grid(self.cells)
         
         #Calc metrics
         area = pa.area(patch)
@@ -78,7 +79,7 @@ class Patch:
 def sparseness(patch, archive):
 
     #Check to make sure this is a patch we even care about
-    if patch.stats.area < 25:
+    if patch.stats.area < 25 or patch.stats.area > 900:
         return 0
 
     if not archive:
@@ -107,6 +108,12 @@ def sparseness(patch, archive):
     else:
         return sum(dists[:K])/float(K)
 
+def cells_to_grid(cells):
+    image = np.zeros((WORLD_X, WORLD_Y))
+    for cell in cells:
+        image[tuple(cell)] = 1
+    return image
+
 def write_results(patches):
     lines = [", ".join(patches[0].stats._fields) + ", id"]
 
@@ -116,9 +123,7 @@ def write_results(patches):
         outfile = open("cells_" + str(i), "w")
         outfile.write(", ".join([str(cell) for cell in patch.cells]))
         outfile.close()
-        image = np.zeros((WORLD_X, WORLD_Y))
-        for cell in patch.patch:
-            image[tuple(cell)] = 1
+        image = cells_to_grid(patch.patch)
         plt.matshow(image)
         plt.grid(False)
         plt.savefig("patch_"+str(i)+".png")
@@ -147,6 +152,7 @@ def main():
         archive = [seed_patch_2cores, seed_patch_square]
 
     for _ in range(GENERATIONS):
+        print _
         for patch in population:
             fitness = sparseness(patch, archive)
 
@@ -159,7 +165,13 @@ def main():
         for _ in range(POP_SIZE):
             winner = max(random.sample(population, TOURNAMENT_SIZE), 
                          key = lambda a: a.fitness)
-            mut = random.random()
+
+            winner = deepcopy(winner)
+            for i in range(WORLD_X):
+                for j in range(WORLD_Y):
+                    if random.random() < MUTATION_RATE:
+                        winner.grid[i,j] = int(not winner.grid[i,j]) 
+            
             if mut < MUTATION_RATE:
                 #Add cell
                 winner = deepcopy(winner)

@@ -140,7 +140,7 @@ def plot_phens_circles(phen_grid, **kwargs):
     grid = phen_grid
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            if grid[i][j] != -1 and int(grid[i][j], 2) != 0:
+            if grid[i][j] != -1 and int(grid[i][j], 2) != -1 and int(grid[i][j], 2) != 0:
                 first = True
                 b_ind = grid[i][j].find("b")
                 phen = grid[i][j][b_ind+1:]
@@ -152,6 +152,14 @@ def plot_phens_circles(phen_grid, **kwargs):
                                 lw=.1 if first else 0, ec="black",\
                                 facecolor=palette[k], zorder=2+k))
                         first = False
+
+            elif int(grid[i][j], 2) == 0:
+                plt.gca().add_patch(
+                    plt.Circle(
+                        (j,i), radius=(n_tasks)*.05, \
+                        lw=.1, ec="black",\
+                        facecolor="grey", zorder=2))
+                
 
 def plot_phens_blits(phen_grid, patches, **kwargs):
     """
@@ -310,11 +318,11 @@ def color_grid(data, palette, denom=9.0, mask_zeros=True):
         grid.append([])
         for col in range(len(data[row])):
             
-            if type(data[row][col]) is str:
-                rgb = color_array_by_hue_mix(data[row][col], palette)
-            else:
+            try:
                 rgb = color_array_by_value(data[row][col], palette, denom, \
                                            mask_zeros)
+            except:
+                rgb = color_array_by_hue_mix(data[row][col], palette)
             
             grid[row].append(rgb)
     

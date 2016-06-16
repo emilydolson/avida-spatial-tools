@@ -1,4 +1,5 @@
 import pysal
+import numpy as np
 
 x = 5
 y = 5
@@ -23,7 +24,6 @@ for i in range(x*y):
         w[i].append(0)
 
     elif i == (x*y)-1:
-        print "lower right"
         #Lower right
         w[i].append(((x*y)-1))
         w[i].append(x-1)
@@ -45,4 +45,8 @@ for i in range(x*y):
   
 
 weights = pysal.weights.weights.W(w)
-print weights.full()
+outfile = open("toroidal_dist_matrix.csv", "w")
+for i in weights.full()[0]:
+    outfile.write(",".join([str(j) for j in i])+"\n")
+
+outfile.close()
