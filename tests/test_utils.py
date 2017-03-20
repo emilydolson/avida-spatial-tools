@@ -30,5 +30,5 @@ def test_convert_to_pysal():
 
 
 def test_get_world_dimensions():
-    dims = get_world_dimensions("grid_task.100000.dat")
+    dims = get_world_dimensions("tests/grid_task.100000.dat")
     assert(dims == (11, 5))
