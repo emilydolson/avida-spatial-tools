@@ -372,7 +372,7 @@ def get_world_dimensions(gridfile, delim=" "):
     infile = open(gridfile)
     lines = infile.readlines()
     infile.close()
-    world_x = len(lines[0].split(delim))
+    world_x = len(lines[0].strip().split(delim))
     world_y = len(lines)
     return (world_x, world_y)
 

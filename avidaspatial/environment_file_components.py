@@ -4,11 +4,12 @@ def gen_gradient(args, resource, inflow, radius, loc, common=True):
     gradient resource with the specified
     name (string), inflow(int), radius(int), and location (tuple of ints)
     """
-    return "GRADIENT_RESOURCE " + str(resource) + ":height=" + str(radius) + \
-        ":plateau=" + str(inflow) + ":spread=" + str(radius-1) + ":common=" + \
-        str(int(common)) + ":updatestep=1000000:peakx=" + str(loc[0]) + \
-        ":peaky=" + str(loc[1]) + ":plateau_inflow=" + str(inflow) + \
-        ":initial=" + str(inflow) + "\n"
+    return "".join(["GRADIENT_RESOURCE ", str(resource), ":height=",
+                    str(radius), ":plateau=", str(inflow), ":spread=",
+                    str(radius-1), ":common=", str(int(common)),
+                    ":updatestep=1000000:peakx=", str(loc[0]), ":peaky=",
+                    str(loc[1]), ":plateau_inflow=", str(inflow), ":initial=",
+                    str(inflow) + "\n"])
 
 
 def gen_res(args, resource, inflow, outflow):
@@ -17,14 +18,16 @@ def gen_res(args, resource, inflow, outflow):
     standard resource with the specified name (string), inflow(int), and
     outflow(int)
     """
-    return "RESOURCE " + resource + ":inflow=" + str(inflow) + \
-        ":outflow=" + str(outflow) + "\n"
+    return "".join(["RESOURCE ", resource, ":inflow=", str(inflow),
+                    ":outflow=", str(outflow), "\n"])
 
 
 def gen_cell(args, resource, cells):
-    return "CELL " + resource + ":" + ",".join([str(i) for i in cells]) \
-        + ":inflow=" + str(args.cellInflow) + ":outflow=" + \
-        str(args.cellOutflow) + ":initial=" + str(args.inflow) + "\n"
+    return "".join(["CELL ", resource, ":",
+                    ",".join([str(i) for i in cells]),
+                    ":inflow=", str(args.cellInflow), ":outflow=",
+                    str(args.cellOutflow), ":initial=", str(args.inflow),
+                    "\n"])
 
 
 def gen_reaction(args, resource, depletable=0):
@@ -46,12 +49,11 @@ def gen_reaction(args, resource, depletable=0):
         task = task[:-1]
 
     name = resource[3:]
-    return "REACTION " + name + " " + task + " process:resource=" + \
-        resource + ":value=" + str(args.taskValDict[task]) + ":type=" \
-        + args.rxnType + ":frac=" + str(args.frac) + ":max=" + \
-        + str(args.resMax) + ":depletable=" + str(int(depletable)) + \
-        " requisite:max_count=" \
-        + str(args.maxCount) + "\n"
+    return "".join(["REACTION ", name, " ", task, " process:resource=",
+                    resource, ":value=", str(args.taskValDict[task]), ":type=",
+                    args.rxnType, ":frac=", str(args.frac), ":max=",
+                    str(args.resMax), ":depletable=", str(int(depletable)),
+                    " requisite:max_count=", str(args.maxCount), "\n"])
 
 
 def calcEvenAnchors(args):

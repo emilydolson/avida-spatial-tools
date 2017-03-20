@@ -6,3 +6,4 @@ from environment_file import *
 from cell_picker import *
 from landscape_stats import *
 from environment_file_components import *
+import environment_generator as eg

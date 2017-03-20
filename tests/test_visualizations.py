@@ -148,8 +148,8 @@ def test_optimal_phenotypes():
 
 def test_paired_environment_phenotype_movie():
     fig = plt.figure()
-    phenotypes = load_grid_data(glob.glob("tests/grid_task.*.dat"))
-    env = parse_environment_file("tests/example_environment.cfg", (11, 5))
+    phenotypes = load_grid_data(glob.glob("grid_task.*.dat"))
+    env = parse_environment_file("example_environment.cfg", (11, 5))
     env = convert_world_to_phenotype(env)
     # env, phenotypes, n = rank_environment_and_phenotypes(env, phenotypes, 20)
     # print env.grid

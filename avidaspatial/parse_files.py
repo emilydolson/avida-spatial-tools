@@ -49,7 +49,8 @@ def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):
         infile = open(f)
         lines = infile.readlines()
         for i in range(world_size[1]):
-            lines[i] = lines[i].split(delim)
+            lines[i] = lines[i].strip().split(delim)
+            print(lines[i])
             for j in range(world_size[0]):
                 if data_type == "binary":
                     val = bin(int(lines[i][j]))

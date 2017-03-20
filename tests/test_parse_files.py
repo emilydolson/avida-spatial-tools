@@ -15,7 +15,7 @@ def test_parse_environment_file_list():
 
 
 def test_load_grid_data():
-    data_file = "tests/grid_task.200000.dat"
+    data_file = "grid_task.200000.dat"
     data = load_grid_data(data_file)
     assert(data == [[['0b1100'], ['0b0'], ['0b0'], ['0b0'],
                      ['0b0'], ['0b0'], ['0b0'], ['0b0'],
@@ -34,7 +34,7 @@ def test_load_grid_data():
 
 
 def test_load_grid_data_int():
-    data_file = "tests/grid_task.200000.dat"
+    data_file = "grid_task.200000.dat"
     data = load_grid_data(data_file, "int")
     assert(data == [[[12], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]],
                     [[0], [0], [0], [9], [9], [0], [0], [0], [0], [0], [3]],
@@ -44,7 +44,7 @@ def test_load_grid_data_int():
 
 
 def test_load_grid_data_list():
-    data_files = ["tests/grid_task.300000.dat", "tests/grid_task.200000.dat"]
+    data_files = ["grid_task.300000.dat", "grid_task.200000.dat"]
     data = load_grid_data(data_files)
     assert(data == [[['0b1100', '0b1100'], ['0b0', '0b0'],
                      ['0b0', '0b0'], ['0b0', '0b0'],
