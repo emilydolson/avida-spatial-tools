@@ -4,7 +4,7 @@ from math import sqrt, log, floor, ceil
 from copy import deepcopy
 import pysal
 import numpy as np
-from avidaspatial.environment_file import *
+from environment_file import *
 import seaborn as sns
 
 

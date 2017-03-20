@@ -5,8 +5,8 @@ import string
 from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.animation
-from avidaspatial.utils import *
-from avidaspatial.transform_data import *
+from utils import *
+from transform_data import *
 import seaborn as sns
 
 
