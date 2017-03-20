@@ -355,7 +355,7 @@ def main():
 
         population = new_pop
     for el in archive:
-        print el.stats
+        print(el.stats)
 
     write_results(archive)
 

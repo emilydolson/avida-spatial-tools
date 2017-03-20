@@ -61,7 +61,7 @@ def make_niche_dictionary(world, world_size, mode="freq"):
                 elif mode == "cells":
                     niches[frozenset(world[i][j])] = [[i, j]]
                 else:
-                    print "Unrecognized mode for make_niche_dictionary"
+                    print("Unrecognized mode for make_niche_dictionary")
                     return
 
     return niches

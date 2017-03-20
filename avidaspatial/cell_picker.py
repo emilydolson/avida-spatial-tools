@@ -4,7 +4,10 @@
 # Based on code from
 # http://stackoverflow.com/questions/26988204/using-2d-array-to-create-clickable-tkinter-canvas
 
-import Tkinter as tk
+try:
+    import tkinter as tk
+except:
+    import Tkinter as tk
 
 
 class cell_picker():
@@ -128,7 +131,7 @@ class cell_picker():
                 self.color_square(x*self.col_width, y*self.row_height)
         self.begin_drag = None
 
-        print len(self.cells), "cells selected"
+        print(len(self.cells), "cells selected")
 
     def run(self):
         """
@@ -138,4 +141,4 @@ class cell_picker():
         return self.cells
 
 if __name__ == "__main__":
-    print cell_picker(60, 60).run()
+    print(cell_picker(60, 60).run())

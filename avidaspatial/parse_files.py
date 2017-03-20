@@ -3,9 +3,9 @@
 # data output files.
 
 import re
-from utils import *
+from avidaspatial.utils import *
 from copy import deepcopy
-from environment_file import EnvironmentFile
+from avidaspatial.environment_file import EnvironmentFile
 
 
 def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):
@@ -50,7 +50,7 @@ def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):
         lines = infile.readlines()
         for i in range(world_size[1]):
             lines[i] = lines[i].strip().split(delim)
-            print(lines[i])
+
             for j in range(world_size[0]):
                 if data_type == "binary":
                     val = bin(int(lines[i][j]))
@@ -61,7 +61,7 @@ def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):
                 elif data_type == "string":
                     val = str(lines[i][j])
                 else:
-                    print "Unsupported data_type passed to load_grid"
+                    print("Unsupported data_type passed to load_grid")
                     return
                 data[i][j].append(val)
 

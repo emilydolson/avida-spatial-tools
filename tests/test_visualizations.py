@@ -159,15 +159,15 @@ def test_paired_environment_phenotype_movie():
 
 def test_make_movie():
     fig = plt.figure()
-    print glob.glob("tests/positivegrid_task.*.dat")
+    print(glob.glob("tests/positivegrid_task.*.dat"))
     phenotypes = load_grid_data(glob.glob("tests/positivegrid_task.*.dat"),
                                 "float")
     make_movie(phenotypes)
 
 if __name__ == "__main__":
-    # test_paired_environment_phenotype_movie()
+    test_paired_environment_phenotype_movie()
     # test_color_percentages()
     # test_visualize_environment()
     # test_paired_environment_phenotype_grid_circles()
     # test_paired_environment_phenotype_grid()
-    test_make_movie()
+    # test_make_movie()

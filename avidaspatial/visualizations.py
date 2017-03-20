@@ -5,8 +5,8 @@ import string
 from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.animation
-from utils import *
-from transform_data import *
+from avidaspatial.utils import *
+from avidaspatial.transform_data import *
 import seaborn as sns
 
 
@@ -86,6 +86,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
                    denom=denom)
         for p in patches:
             fig.gca().add_patch(p)
+        return patches
 
     # Change colors of circles as appropriate for new time step
     def animate(n):
@@ -93,7 +94,7 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
         # Recolor circles
         plot_phens_blits(phen_grid, patches,
                          palette=environment.task_palette, denom=denom)
-        return patches,
+        return patches
 
     # Do actual animation
     anim = matplotlib.animation.FuncAnimation(
@@ -137,9 +138,9 @@ def make_movie(phenotypes, **kwargs):
 
     # Change colors of circles as appropriate for new time step
     def animate(n):
-        print "animating", n
+        # print("animating", n)
         phen_grid = slice_3d_grid(phenotypes, n)
-        print phen_grid
+        # print(phen_grid)
         grid = color_grid(phen_grid, palette, denom, False)
         plt.tick_params(labelbottom="off", labeltop="off", labelleft="off",
                         labelright="off", bottom="off", top="off", left="off",

@@ -1,4 +1,5 @@
 import seaborn as sns
+import copy
 
 
 class EnvironmentFile:
@@ -25,11 +26,11 @@ class EnvironmentFile:
           appearance.
         """
         self.grid = grid
-        self.resources = resources
+        self.resources = list(resources)
         self.size = size
         self.name = name.split("/")[-1]  # Extract filename from path
         self.name = self.name[:-4]  # Remove file extension
-        self.tasks = tasks
+        self.tasks = list(tasks)
 
         if len(self.resources) == 1:
             # Yay, we can make the background nice and simple!
@@ -76,3 +77,7 @@ class EnvironmentFile:
 
     def __len__(self):
         return len(self.grid)
+
+    def __deepcopy__(self, memo):
+        return EnvironmentFile(copy.deepcopy(self.grid), self.resources,
+                               self.size, self.name, self.tasks)

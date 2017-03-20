@@ -4,7 +4,7 @@ from math import sqrt, log, floor, ceil
 from copy import deepcopy
 import pysal
 import numpy as np
-from environment_file import *
+from avidaspatial.environment_file import *
 import seaborn as sns
 
 
@@ -203,12 +203,13 @@ def convert_world_to_phenotype(world):
     Returns: an EnvironmentFile object with a grid of binary strings
     """
     if set(world.resources) != set(world.tasks):
-        print "Warning: world phenotypes don't correspond to phenotypes"
+        print("Warning: world phenotypes don't correspond to phenotypes")
     if set(world.resources).issubset(set(world.tasks)):
         conversion_func = function_with_args(res_set_to_phenotype, world.tasks)
     else:
         conversion_func = \
             function_with_args(res_set_to_phenotype, world.resources)
+
     grid = agg_grid(deepcopy(world), conversion_func)
     return grid
 
@@ -252,6 +253,7 @@ def res_set_to_phenotype(res_set, full_list):
     returns: A binary string
     """
 
+    full_list = list(full_list)
     phenotype = len(full_list) * ["0"]
 
     for i in range(len(full_list)):
@@ -352,7 +354,7 @@ def string_avg(strings, binary=True):
         for i in range(len(strings)):
             while len(strings[i]) < longest:
                 split_string = strings[i].split("b")
-                strings[i] = split_string[0] + "b0" + split_string[1]
+                strings[i] = "0b0" + split_string[1]
 
     avg = ""
     for i in (range(len(strings[0]))):
