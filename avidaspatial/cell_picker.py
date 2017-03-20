@@ -1,9 +1,11 @@
-#The cell_picker class provides a graphical interface for selecting cells in
-#an environment.
+# The cell_picker class provides a graphical interface for selecting cells in
+# an environment.
 
-#Based on code from http://stackoverflow.com/questions/26988204/using-2d-array-to-create-clickable-tkinter-canvas
+# Based on code from
+# http://stackoverflow.com/questions/26988204/using-2d-array-to-create-clickable-tkinter-canvas
 
 import Tkinter as tk
+
 
 class cell_picker():
     """
@@ -33,13 +35,14 @@ class cell_picker():
         self.cols = cols
 
         # Create a grid of None to store the references to the tiles
-        self.tiles = [[None for _ in range(self.cols)] \
+        self.tiles = [[None for _ in range(self.cols)]
                       for _ in range(self.rows)]
         self.cells = []
 
         self.root = tk.Tk()
-        self.c = tk.Canvas(self.root, width=self.rows*10, \
-                        height=self.cols*10, borderwidth=0, background='white')
+        self.c = tk.Canvas(self.root, width=self.rows*10,
+                           height=self.cols*10, borderwidth=0,
+                           background='white')
         self.c.pack()
 
         # Create the window, a canvas and the mouse click event binding
@@ -47,13 +50,12 @@ class cell_picker():
         self.c.bind("<ButtonRelease-1>", self.dragend)
         self.initial = selected
 
-
     def callback(self, event):
         """
         Selects cells on click.
         """
         self.init_width()
-        
+
         if len(self.initial) > 0:
             for cell in self.initial:
                 self.color_square(cell[0], cell[1], True)
@@ -83,10 +85,13 @@ class cell_picker():
         # If the tile is not filled, create a rectangle
         if not self.tiles[row][col]:
             self.tiles[row][col] = \
-            self.c.create_rectangle(col*self.col_width, row*self.row_height,\
-                (col+1)*self.col_width, (row+1)*self.row_height, fill="black")
+                self.c.create_rectangle(col*self.col_width,
+                                        row*self.row_height,
+                                        (col+1)*self.col_width,
+                                        (row+1)*self.row_height,
+                                        fill="black")
             self.cells.append(row*self.cols + col)
-        
+
         # If the tile is filled, delete the rectangle and clear the reference
         else:
             self.c.delete(self.tiles[row][col])
@@ -104,16 +109,17 @@ class cell_picker():
         Handles the end of a drag action.
         """
         x_range = [self.begin_drag.x//self.col_width, event.x//self.col_width]
-        y_range = [self.begin_drag.y//self.row_height, event.y//self.row_height]
+        y_range = [self.begin_drag.y//self.row_height,
+                   event.y//self.row_height]
 
-        #Check bounds
+        # Check bounds
         for i in range(2):
             for ls in [x_range, y_range]:
                 if ls[i] < 0:
                     ls[i] = 0
                 if ls[i] >= self.rows:
                     ls[i] = self.rows-1
-            
+
         for x in range(min(x_range), max(x_range)+1):
             for y in range(min(y_range), max(y_range)+1):
                 if x == self.begin_drag.x//self.col_width and \

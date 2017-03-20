@@ -2,10 +2,11 @@ from avidaspatial import *
 from scipy.spatial.distance import pdist
 import scipy.cluster.hierarchy as hierarchicalcluster
 
+
 def rank_environment_and_phenotypes(environment, phenotypes, k=15):
     """
-    Clusters sets of resources/tasks using a weighted hamming distance such that
-    you can have few enough values to give each group of similar things a
+    Clusters sets of resources/tasks using a weighted hamming distance such
+    that you can have few enough values to give each group of similar things a
     different color. This function is designed for cases when you want to
     color both an environment and a set of phenotypes such that the colors
     corespond to each other.
@@ -13,7 +14,7 @@ def rank_environment_and_phenotypes(environment, phenotypes, k=15):
     Takes an EnvironmentFile object, a 2d array of phenotypes, and, optionally,
     a number indicating the maximum number of clusters (default 15).
 
-    Returns: 
+    Returns:
      - An EnvironmentFile in which the grid has been replaced with integers
        indicating which cluster a cell is a member of. Integers are assigned
        such that cells containing more or more complex resources have higher
@@ -40,31 +41,33 @@ def do_clustering(types, max_clust):
     Returns: A dictionary mapping cluster ids to lists of numbers that are part
     of that cluster.
     """
-    #Fill in leading zeros to make all numbers same length.
+    # Fill in leading zeros to make all numbers same length.
     ls = [list(t[t.find("b")+1:]) for t in types]
     prepend_zeros_to_lists(ls)
 
     dist_matrix = pdist(ls, weighted_hamming)
     clusters = hierarchicalcluster.complete(dist_matrix)
-    clusters = hierarchicalcluster.fcluster(clusters, max_clust, \
+    clusters = hierarchicalcluster.fcluster(clusters, max_clust,
                                             criterion="maxclust")
 
-    #Group members of each cluster together
+    # Group members of each cluster together
     cluster_dict = dict((c, []) for c in set(clusters))
     for i in range(len(types)):
         cluster_dict[clusters[i]].append(types[i])
 
     return cluster_dict
 
+
 def rank_clusters(cluster_dict):
     """
     Helper function for clustering that takes a dictionary mapping cluster
-    ids to lists of the binary strings that are part of that cluster and returns
-    a dictionary mapping cluster ids to integers representing their "rank".
-    Ranks provide an ordering for the clusters such that each cluster has
-    its own rank, and clusters are ordered from simplest to most complex.
+    ids to lists of the binary strings that are part of that cluster and
+    returns a dictionary mapping cluster ids to integers representing their
+    "rank". Ranks provide an ordering for the clusters such that each
+    cluster has its own rank, and clusters are ordered from simplest to
+    most complex.
     """
-    #Figure out the relative rank of each cluster
+    # Figure out the relative rank of each cluster
     cluster_ranks = dict.fromkeys(cluster_dict.keys())
     for key in cluster_dict:
         cluster_ranks[key] = eval(string_avg(cluster_dict[key], binary=True))
@@ -90,30 +93,30 @@ def get_ranks_for_environment_and_phenotypes(environment, phenotypes, k=15):
     resources/tasks that are present/performed in a given cell to integers
     indicating the ranked order of the cluster they're part of.
     """
-    #Create list of all niches and all phenotypes, in phenotype format
-    niches = flatten_array(environment)    
+    # Create list of all niches and all phenotypes, in phenotype format
+    niches = flatten_array(environment)
     phenotypes = flatten_array(phenotypes)
-                
+
     types = set(phenotypes+niches)
 
-    types.discard("-0b1") #We'll handle this specially
-    types.discard("0b0") #We'll handle this specially
+    types.discard("-0b1")  # We'll handle this specially
+    types.discard("0b0")  # We'll handle this specially
 
-    #Do all clustering ahead of time so colors remain consistent.
+    # Do all clustering ahead of time so colors remain consistent.
     ranks = generate_ranks(list(types), k)
-    
-    ranks["-0b1"] = -1 # The empty phenotype/niche should always be rank -1
-    ranks["0b0"] = 0 # The empty phenotype/niche should always be rank 0
+
+    ranks["-0b1"] = -1  # The empty phenotype/niche should always be rank -1
+    ranks["0b0"] = 0  # The empty phenotype/niche should always be rank 0
 
     return ranks
-    
+
 
 def assign_ranks_by_cluster(grid, n, ranks=None):
     """
     Takes a 2D array representing phenotypes or resource sets across the world,
-    and integer rpresenting the maximum number of clusters allowed, and 
+    and integer rpresenting the maximum number of clusters allowed, and
     optionally a dictionary indicating the rank of the cluster of each
-    phenotype/resource set. If this dictionary is not provided, one will be 
+    phenotype/resource set. If this dictionary is not provided, one will be
     generated.
 
     Returns: - A 2d array of numbers indicating the ranks of the clusters
@@ -123,6 +126,7 @@ def assign_ranks_by_cluster(grid, n, ranks=None):
     if ranks is None:
         ranks = generate_ranks(grid, n)
     return assign_ranks_to_grid(grid, ranks), len(ranks)
+
 
 def generate_ranks(grid, n):
     """
@@ -138,15 +142,16 @@ def generate_ranks(grid, n):
     phenotypes = deepcopy(grid)
     if type(phenotypes) is list and type(phenotypes[0]) is list:
         phenotypes = flatten_array(phenotypes)
-    
-    #Remove duplicates from types
+
+    # Remove duplicates from types
     types = list(frozenset(phenotypes))
     if len(types) < n:
         ranks = rank_types(types)
     else:
         ranks = cluster_types(types, n)
-    
+
     return ranks
+
 
 def assign_ranks_to_grid(grid, ranks):
     """
@@ -176,21 +181,22 @@ def cluster_types(types, max_clust=12):
     from 0 to max_clust. Hierarchical clustering is used to determine which
     which binary numbers should map to the same integer.
     """
-    
+
     if len(types) < max_clust:
         max_clust = len(types)
- 
-    #Do actual clustering
+
+    # Do actual clustering
     cluster_dict = do_clustering(types, max_clust)
     cluster_ranks = rank_clusters(cluster_dict)
 
-    #Create a dictionary mapping binary numbers to indices
+    # Create a dictionary mapping binary numbers to indices
     ranks = {}
     for key in cluster_dict:
         for typ in cluster_dict[key]:
             ranks[typ] = cluster_ranks[key]
-   
+
     return ranks
+
 
 def rank_types(types):
     """
@@ -213,8 +219,9 @@ def rank_types(types):
 
     return ranks
 
+
 def make_count_grid(data):
-    """ 
+    """
     Takes a 2 or 3d grid of strings representing binary numbers.
 
     Returns a grid of the same dimensions in which each binary number has been
@@ -223,7 +230,7 @@ def make_count_grid(data):
     """
     data = deepcopy(data)
 
-    for i in range(len(data)):        
+    for i in range(len(data)):
         for j in range(len(data[i])):
             for k in range(len(data[i][j])):
                 if type(data[i][j][k]) is list:
@@ -231,7 +238,7 @@ def make_count_grid(data):
                         try:
                             data[i][j][k] = data[i][j][k][l].count("1")
                         except:
-                            data[i][j][k] = len(data[i][j][k][l])      
+                            data[i][j][k] = len(data[i][j][k][l])
                 else:
                     try:
                         data[i][j][k] = data[i][j][k].count("1")
@@ -239,6 +246,7 @@ def make_count_grid(data):
                         data[i][j][k] = len(data[i][j][k])
 
     return data
+
 
 def make_optimal_phenotype_grid(environment, phenotypes):
     """
@@ -261,15 +269,17 @@ def make_optimal_phenotype_grid(environment, phenotypes):
     for i in range(world_size[1]):
         for j in range(world_size[0]):
             for k in range(len(phenotypes[i][j])):
-                phenotype = phenotype_to_res_set(phenotypes[i][j][k], environment.tasks)
+                phenotype = phenotype_to_res_set(phenotypes[i][j][k],
+                                                 environment.tasks)
                 diff = len(environment[i][j].symmetric_difference(phenotype))
                 phenotypes[i][j][k] = diff
 
     return phenotypes
 
+
 def task_percentages(data, n_tasks=9):
     """
-    Takes a 3D array of strings representing binary numbers and calculates 
+    Takes a 3D array of strings representing binary numbers and calculates
     the percentage of organisms in each cell (across multiple files)
     that were doing a given task.
 

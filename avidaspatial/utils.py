@@ -1,4 +1,4 @@
-#This file contains functions that are used throuhgout avida-spatial-tools
+# This file contains functions that are used throuhgout avida-spatial-tools
 
 from math import sqrt, log, floor, ceil
 from copy import deepcopy
@@ -6,6 +6,7 @@ import pysal
 import numpy as np
 from environment_file import *
 import seaborn as sns
+
 
 def get_kwargs(grid, kwargs, phenotypes=False):
     """
@@ -40,8 +41,9 @@ def get_kwargs(grid, kwargs, phenotypes=False):
         length = get_pallete_length(grid)
         palette = sns.hls_palette(length, s=1)
         denom = length
-        
+
     return denom, palette
+
 
 def get_pallete_length(grid):
     """
@@ -53,23 +55,25 @@ def get_pallete_length(grid):
     """
     elements = list(set(flatten_array(grid)))
     length = len(elements)
-    
+
     if type(elements[0]) is str:
         lengths = [len(el) for el in elements if not el.startswith("-")]
-        if max(lengths) < 5: #Mixing red and green 
-            length += 2 #is not pretty so let's avoid it
+        if max(lengths) < 5:  # Mixing red and green
+            length += 2  # is not pretty so let's avoid it
     return length
+
 
 def agg_grid(grid, agg=None):
     """
     Many functions return a 2d list with a complex data type in each cell.
-    For instance, grids representing environments have a set of resources, while
-    reading in multiple data files at once will yield a list containing the
-    values for that cell from each file. In order to visualize these data types
-    it is helpful to summarize the more complex data types with a single number.
-    For instance, you might want to take the length of a resource set to see how
-    many resource types are present. Alternately, you might want to take the
-    mode of a list to see the most common phenotype in a cell. 
+    For instance, grids representing environments have a set of resources,
+    while reading in multiple data files at once will yield a list
+    containing the values for that cell from each file. In order to visualize
+    these data types it is helpful to summarize the more complex data types
+    with a single number. For instance, you might want to take the length
+    of a resource set to see how many resource types are present. Alternately,
+    you might want to take the mode of a list to see the most common phenotype
+    in a cell.
 
     This function facilitates this analysis by calling the given aggregation
     function (agg) on each cell of the given grid and returning the result.
@@ -90,10 +94,11 @@ def agg_grid(grid, agg=None):
 
     return grid
 
+
 def slice_3d_grid(grid, n):
     """
     Takes a three dimensional array and an integer (n) and returns a 2d array
-    containing the Nth value from the 3rd dimension at each location in the 
+    containing the Nth value from the 3rd dimension at each location in the
     grid.
     """
     phen_grid = initialize_grid((len(grid[0]), len(grid)), 0)
@@ -103,6 +108,7 @@ def slice_3d_grid(grid, n):
             phen_grid[i][j] = grid[i][j][n]
 
     return phen_grid
+
 
 def flatten_array(grid):
     """
@@ -126,13 +132,15 @@ def prepend_zeros_to_lists(ls):
         while len(ls[i]) < longest:
             ls[i].insert(0, "0")
 
+
 def dict_increment(d, key, amount):
     if key in d:
         d[key] += amount
     else:
         d[key] = amount
-     
-def squared_toroidal_dist(p1, p2, world_x = 60, world_y = 60):
+
+
+def squared_toroidal_dist(p1, p2, world_x=60, world_y=60):
     """
     Separated out because sqrt has a lot of overhead
     """
@@ -147,7 +155,7 @@ def squared_toroidal_dist(p1, p2, world_x = 60, world_y = 60):
         deltax += world_x
     elif deltax > halfx:
         deltax -= world_x
-    
+
     deltay = p1[1] - p2[1]
     if deltay < -halfy:
         deltay += world_y
@@ -156,10 +164,12 @@ def squared_toroidal_dist(p1, p2, world_x = 60, world_y = 60):
 
     return deltax*deltax + deltay*deltay
 
-def toroidal_dist(p1, p2, world_x = 60, world_y = 60):
+
+def toroidal_dist(p1, p2, world_x=60, world_y=60):
     return sqrt(squared_toroidal_dist(p1, p2, world_x, world_y))
-    #return sqrt(min((p1[0] - p2[0])**2, (p1[0]+world_x - p2[0])**2) + \
+    # return sqrt(min((p1[0] - p2[0])**2, (p1[0]+world_x - p2[0])**2) + \
     #            min((p1[1] - p2[1])**2, (p1[1]+world_y - p2[1])**2))
+
 
 def dist(p1, p2):
     """
@@ -167,11 +177,12 @@ def dist(p1, p2):
     """
     return sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
+
 def function_with_args(func, *args):
     """
     Returns a function that calls a function with the specified arguments.
     The returned function still takes one argument representing the first
-    positional argument. 
+    positional argument.
 
     This is mostly a helper function for using agg_grid with functions
     requiring more information than the cell contents.
@@ -179,6 +190,7 @@ def function_with_args(func, *args):
     def inner(arg):
         return func(arg, *args)
     return inner
+
 
 def convert_world_to_phenotype(world):
     """
@@ -195,7 +207,8 @@ def convert_world_to_phenotype(world):
     if set(world.resources).issubset(set(world.tasks)):
         conversion_func = function_with_args(res_set_to_phenotype, world.tasks)
     else:
-        conversion_func = function_with_args(res_set_to_phenotype, world.resources)
+        conversion_func = \
+            function_with_args(res_set_to_phenotype, world.resources)
     grid = agg_grid(deepcopy(world), conversion_func)
     return grid
 
@@ -213,7 +226,7 @@ def phenotype_to_res_set(phenotype, resources):
     """
     assert(phenotype[0:2] == "0b")
     phenotype = phenotype[2:]
-    #Fill in leading zeroes
+    # Fill in leading zeroes
     while len(phenotype) < len(resources):
         phenotype = "0" + phenotype
 
@@ -222,9 +235,10 @@ def phenotype_to_res_set(phenotype, resources):
     for i in range(len(phenotype)):
         if phenotype[i] == "1":
             res_set.add(resources[i])
-    
+
     assert(phenotype.count("1") == len(res_set))
     return res_set
+
 
 def res_set_to_phenotype(res_set, full_list):
     """
@@ -243,10 +257,10 @@ def res_set_to_phenotype(res_set, full_list):
     for i in range(len(full_list)):
         if full_list[i] in res_set:
             phenotype[i] = "1"
-   
+
     assert(phenotype.count("1") == len(res_set))
-    
-    #Remove uneceesary leading 0s
+
+    # Remove uneceesary leading 0s
     while phenotype[0] == "0" and len(phenotype) > 1:
         phenotype = phenotype[1:]
 
@@ -261,10 +275,11 @@ def weighted_hamming(b1, b2):
     hamming = 0
     for i in range(len(b1)):
         if b1[i] != b2[i]:
-            #differences at more significant (leftward) bits are more important
+            # differences at more significant (leftward) bits
+            # are more important
             if i > 0:
                 hamming += 1 + 1.0/i
-                #This weighting is completely arbitrary
+                # This weighting is completely arbitrary
     return hamming
 
 
@@ -279,9 +294,10 @@ def n_tasks(dec_num):
     try:
         bitstring = dec_num[2:]
     except:
-        bitstring = bin(int(dec_num))[2:] #cut off 0b
-    #print bin(int(dec_num)), bitstring
+        bitstring = bin(int(dec_num))[2:]  # cut off 0b
+    # print bin(int(dec_num)), bitstring
     return bitstring.count("1")
+
 
 def convert_to_pysal(data):
     """
@@ -294,8 +310,8 @@ def convert_to_pysal(data):
     return w, data
 
 
-#~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#Provided for easy use with agg_grid
+# ~~~~~~~~~~~~~~~~~~~~~~AGGREGATION FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Provided for easy use with agg_grid
 
 def mode(ls):
     """
@@ -304,11 +320,13 @@ def mode(ls):
     """
     return max(set(ls), key=ls.count)
 
+
 def mean(ls):
     """
     Takes a list and returns the mean.
     """
     return float(sum(ls))/len(ls)
+
 
 def median(ls):
     """
@@ -316,6 +334,7 @@ def median(ls):
     """
     ls = sorted(ls)
     return ls[int(floor(len(ls)/2.0))]
+
 
 def string_avg(strings, binary=True):
     """
@@ -326,13 +345,13 @@ def string_avg(strings, binary=True):
     strings as binary numbers (fill in leading zeros if lengths differ).
     """
 
-    if binary: #Assume this is a binary number and fill leading zeros
+    if binary:  # Assume this is a binary number and fill leading zeros
         strings = deepcopy(strings)
         longest = len(max(strings, key=len))
 
         for i in range(len(strings)):
             while len(strings[i]) < longest:
-                split_string = strings[i].split("b") 
+                split_string = strings[i].split("b")
                 strings[i] = split_string[0] + "b0" + split_string[1]
 
     avg = ""
@@ -344,7 +363,8 @@ def string_avg(strings, binary=True):
 
     return avg
 
-def get_world_dimensions(gridfile):
+
+def get_world_dimensions(gridfile, delim=" "):
     """
     This function takes the name of a file in grid_task format and returns
     the dimensions of the world it represents.
@@ -352,9 +372,10 @@ def get_world_dimensions(gridfile):
     infile = open(gridfile)
     lines = infile.readlines()
     infile.close()
-    world_x = len(lines[0].split())
+    world_x = len(lines[0].split(delim))
     world_y = len(lines)
     return (world_x, world_y)
+
 
 def initialize_grid(world_size, inner):
     """
@@ -368,4 +389,3 @@ def initialize_grid(world_size, inner):
         for j in range(world_size[0]):
             data[i].append(deepcopy(inner))
     return data
-

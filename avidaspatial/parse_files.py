@@ -1,18 +1,20 @@
-#This file contains functions for parsing Avida environment files and spatial
-#data output files.
+
+# This file contains functions for parsing Avida environment files and spatial
+# data output files.
 
 import re
 from utils import *
 from copy import deepcopy
 from environment_file import EnvironmentFile
 
-def load_grid_data(file_list, data_type="binary", sort=True):
+
+def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):
     """
     Loads data from one or multiple grid_task files.
 
     Arguments:
         file_list - either a string or a list of strings indicating files to
-                    load data from. Files are assumed to be in grid_task.dat 
+                    load data from. Files are assumed to be in grid_task.dat
                     format (space delimited values, one per cell).
 
         data_type - a string representing what type of data is in the file.
@@ -25,29 +27,29 @@ def load_grid_data(file_list, data_type="binary", sort=True):
 
     Returns: A three-dimensional array. The first dimension is columns, the
     second is rows. At each row,column index in the array is another list
-    which holds the values that each of the requested files has at that location
-    in the grid. If you want this list collapsed to a single representative
-    number, you should use agg_niche_grid.
+    which holds the values that each of the requested files has at that
+    location in the grid. If you want this list collapsed to a single
+    representative number, you should use agg_niche_grid.
     """
 
-    #If there's only one file, we pretend it's a list
+    # If there's only one file, we pretend it's a list
     if not type(file_list) is list:
         file_list = [file_list]
     elif sort:
-        #put file_list in chronological order
+        # put file_list in chronological order
         file_list.sort(key=lambda f: int(re.sub("[^0-9]", "", f)))
 
-    world_size = get_world_dimensions(file_list[0])
+    world_size = get_world_dimensions(file_list[0], delim)
 
-    #Initialize empty data array
+    # Initialize empty data array
     data = initialize_grid(world_size, [])
 
-    #Loop through file list, reading in data
+    # Loop through file list, reading in data
     for f in file_list:
         infile = open(f)
         lines = infile.readlines()
         for i in range(world_size[1]):
-            lines[i] = lines[i].split()
+            lines[i] = lines[i].split(delim)
             for j in range(world_size[0]):
                 if data_type == "binary":
                     val = bin(int(lines[i][j]))
@@ -67,7 +69,7 @@ def load_grid_data(file_list, data_type="binary", sort=True):
     return data
 
 
-def make_niche_grid(res_dict, world_size=(60,60)):
+def make_niche_grid(res_dict, world_size=(60, 60)):
     """
     Converts dictionary specifying where resources are to nested lists
     specifying what sets of resources are where.
@@ -82,22 +84,23 @@ def make_niche_grid(res_dict, world_size=(60,60)):
     available at each x,y location in the Avida grid.
     """
 
-    #Initialize array to represent world
+    # Initialize array to represent world
     world = initialize_grid(world_size, set())
 
-    #Fill in data on niches present in each cell of the world
+    # Fill in data on niches present in each cell of the world
     for res in res_dict:
         for cell in res_dict[res]:
             world[cell[1]][cell[0]].add(res)
- 
+
     return world
 
-def parse_environment_file_list(names, world_size=(60,60)):
+
+def parse_environment_file_list(names, world_size=(60, 60)):
     """
     Extract information about spatial resources from all environment files in
     a list.
 
-    Arguments: 
+    Arguments:
     names - a list of strings representing the paths to the environment files.
     world_size - a tuple representing the x and y coordinates of the world.
                  (default: 60x60)
@@ -107,7 +110,7 @@ def parse_environment_file_list(names, world_size=(60,60)):
     available at each x,y location in the Avida grid for that environment.
     """
 
-    #Convert single file to list if necessary
+    # Convert single file to list if necessary
     try:
         names[0] = names[0]
     except:
@@ -119,14 +122,15 @@ def parse_environment_file_list(names, world_size=(60,60)):
 
     return envs
 
+
 def reduce_resource_name_to_task(res_name):
     """
     Assuming that the convention of naming resources associated with tasks as
-    res[TASK][number], reduces such resource names to just the name of the task.
-    This ensures that multiple copies of the same resource are treated the
-    same. Resource names of different formats will be left untouched.
+    res[TASK][number], reduces such resource names to just the name of the
+    task. This ensures that multiple copies of the same resource are treated
+    the same. Resource names of different formats will be left untouched.
     """
-    #Reduce resource names to tasks being rewarded
+    # Reduce resource names to tasks being rewarded
     if res_name[:3].lower() != "res":
         return res_name
     res_name = res_name[3:].lower()
@@ -134,11 +138,12 @@ def reduce_resource_name_to_task(res_name):
         res_name = res_name[:-1]
     return res_name
 
-def parse_environment_file(filename, world_size=(60,60)):
+
+def parse_environment_file(filename, world_size=(60, 60)):
     """
     Extract information about spatial resources from an environment file.
 
-    Arguments: 
+    Arguments:
     filename - a string representing the path to the environment file.
     world_size - a tuple representing the x and y coordinates of the world.
                  (default: 60x60)
@@ -153,7 +158,7 @@ def parse_environment_file(filename, world_size=(60,60)):
 
     tasks = []
 
-    #Find all spatial resources and record which cells they're in
+    # Find all spatial resources and record which cells they're in
     res_dict = {}
     for line in lines:
         if line.startswith("GRADIENT_RESOURCE"):
@@ -166,13 +171,14 @@ def parse_environment_file(filename, world_size=(60,60)):
                 tasks.append(task)
         else:
             continue
-        
+
         dict_increment(res_dict, name, cells)
-            
-    #Create a map of niches across the environment and return it
-    grid = make_niche_grid(res_dict, world_size)    
+
+    # Create a map of niches across the environment and return it
+    grid = make_niche_grid(res_dict, world_size)
 
     return EnvironmentFile(grid, res_dict.keys(), world_size, filename, tasks)
+
 
 def parse_reaction(line):
     """
@@ -182,6 +188,7 @@ def parse_reaction(line):
     sline = line.split()
     return sline[2].strip()
 
+
 def parse_gradient(line, world_size):
     """
     Takes a string representing a GRADIENT_RESOURCE (as specified in Avida
@@ -189,7 +196,7 @@ def parse_gradient(line, world_size):
     world, and returns the name of the gradient resource and a list of
     tuples representing the cells it's in.
     """
-    #remove "GRADIENT_RESOURCE"
+    # remove "GRADIENT_RESOURCE"
     line = line[18:]
 
     sline = [el.strip() for el in line.split(":")]
@@ -199,7 +206,7 @@ def parse_gradient(line, world_size):
     x = None
     y = None
 
-    #Extract data
+    # Extract data
     for item in sline:
         if item.startswith("height"):
             radius = int(item.split("=")[1])
@@ -207,15 +214,16 @@ def parse_gradient(line, world_size):
             x = int(item.split("=")[1])
         elif item.startswith("peaky"):
             y = int(item.split("=")[1])
-            
-    #Translate circle to cells)
+
+    # Translate circle to cells)
     cells = []
     for i in range(world_size[0]):
         for j in range(world_size[1]):
-            if (dist((i,j), (x,y))) <= radius-1:
-                cells.append((i,j))
+            if (dist((i, j), (x, y))) <= radius-1:
+                cells.append((i, j))
 
     return (name, cells)
+
 
 def parse_cell(line, world_size):
     """
@@ -224,17 +232,17 @@ def parse_cell(line, world_size):
     world, and returns the name of the resource and a list of
     tuples representing the cells it's in.
     """
-    #Remove "CELL "
+    # Remove "CELL "
     line = line[4:]
 
-    #Extract information
+    # Extract information
     sline = [i.strip() for i in line.split(":")]
     name = sline[0]
     name = reduce_resource_name_to_task(name)
     cell_components = sline[1].split(",")
     cells = []
 
-    #List all cells
+    # List all cells
     for i in range(len(cell_components)):
         if ".." in cell_components[i]:
             cell_range = [int(j) for j in cell_components[i].split("..")]
@@ -246,6 +254,6 @@ def parse_cell(line, world_size):
     if cells == [""]:
         return (name, [])
 
-    xy_pairs = [(int(c)%world_size[0], int(c)//world_size[0]) for c in cells]
+    xy_pairs = [(int(c) % world_size[0], int(c)//world_size[0]) for c in cells]
 
     return (name, xy_pairs)
