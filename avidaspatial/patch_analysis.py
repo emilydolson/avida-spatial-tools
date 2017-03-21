@@ -1,5 +1,5 @@
 from math import sqrt, pi, floor, ceil
-from avidaspatial import *
+from .utils import *
 import sys
 import glob
 from collections import deque
@@ -294,10 +294,11 @@ def get_core_areas(patch, distance, world_size=60):
                     break
                 curr = queue.popleft()
 
+        print(dist_to_edge, squared_distance, cell)
         if dist_to_edge >= squared_distance:
             # squared distance is more efficient
             core_patch.append(cell)
-
+        print(core_patch)
     return traverse_core(core_patch, world_size)
 
 
@@ -316,6 +317,7 @@ def traverse_core(core_area, world_size=60):
     cores = [[curr]]
 
     while core_area:
+        print(core_area)
         neighbors = [tuple(i) for i in
                      get_moore_neighbors(list(curr), world_size)]
 
@@ -328,8 +330,8 @@ def traverse_core(core_area, world_size=60):
         if to_explore:
             curr = to_explore.pop()
         else:
-            cores.append([])
             curr = core_area.pop()
+            cores.append([curr])
 
     return cores
 

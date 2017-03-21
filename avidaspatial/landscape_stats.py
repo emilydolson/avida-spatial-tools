@@ -1,3 +1,7 @@
+from .utils import *
+from .parse_files import *
+
+
 def patch_richness(res_dict, world_size=60):
     world = make_niche_grid(res_dict, world_size)
     niches = {}
@@ -88,7 +92,8 @@ def sqrt_shannon_entropy(filename):
     This might account for relationship between population size and
     evolvability.
     """
-    data = load_grid_data(filename, "raw")
+    data = load_grid_data(filename, "int")
+    data = agg_grid(data, mode)
     phenotypes = {}
     for r in data:
         for c in r:
