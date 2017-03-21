@@ -71,7 +71,7 @@ def get_moore_neighbors(cell, world_size=60):
 def weighted_perimeter(patch):
     edge = 0
     for cell in patch:
-        neighbors = get_moore_neighbors(cell)
+        neighbors = get_rook_neighbors(cell)
         neighbors = [n for n in neighbors if n in patch]
         edge += (8.0 - len(neighbors))/8.0
     return edge

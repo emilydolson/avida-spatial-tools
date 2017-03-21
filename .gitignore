@@ -565,3 +565,4 @@ toroidal_dist_matrix.csv
 *.dat
 *.csv
 *.png
+.Rhistory
