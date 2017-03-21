@@ -19,3 +19,13 @@ def test_sqrt_shannon_entropy():
          "f": sqrt(45)}
     assert(np.isclose(sqrt_shannon_entropy("tests/grid_task.10000.dat"),
                       entropy(d)))
+
+
+def test_patch_richness():
+    env = parse_environment_file("tests/example_environment.cfg")
+    assert(patch_richness(env, (11, 5)) == 4)
+
+
+def test_calc_environment_entropy():
+    env = parse_environment_file("tests/example_environment.cfg")
+    assert(np.isclose(calc_environment_entropy(env, (11, 5)), 1.1983414))

@@ -2,11 +2,10 @@ from .utils import *
 from .parse_files import *
 
 
-def patch_richness(res_dict, world_size=60):
-    world = make_niche_grid(res_dict, world_size)
+def patch_richness(world, world_size=(60,60)):
     niches = {}
-    for i in range(world_size):
-        for j in range(world_size):
+    for i in range(world_size[1]):
+        for j in range(world_size[0]):
 
             # use frozensets because they are hashable
             if frozenset(world[i][j]) in niches:
@@ -17,7 +16,7 @@ def patch_richness(res_dict, world_size=60):
     return len(niches.keys())
 
 
-def calc_environment_entropy(res_dict, world_size=(60, 60),
+def calc_environment_entropy(world, world_size=(60, 60),
                              exclude_desert=False):
     """
     Calculate the Shannon entropy of a given environment, treating each niche
@@ -25,8 +24,8 @@ def calc_environment_entropy(res_dict, world_size=(60, 60),
     are rewarded) as a category. The environment is specified with the
     following inputs:
 
-    res_dict - a dictionary in which keys are resources in the environment
-    and values are list of tuples representing the cells they're in.
+    world - a list of lists of sets of resources (strings) indicating
+            the set of resources in every cell in the world.
 
     world_size - a tuple indicating the dimensions of the world.
            Default = 60x60, because that's the default Avida world siz
@@ -35,9 +34,6 @@ def calc_environment_entropy(res_dict, world_size=(60, 60),
           specific, niches in which no tasks are rewarded
           will not be considered in the calculation.
     """
-
-    # Initialize list of list of sets to record which niches are where
-    world = make_niche_grid(res_dict, world_size)
 
     niches = make_niche_dictionary(world, world_size)
 
@@ -51,8 +47,8 @@ def calc_environment_entropy(res_dict, world_size=(60, 60),
 def make_niche_dictionary(world, world_size, mode="freq"):
     # loop through world, counting frequency of each niche
     niches = {}
-    for i in range(world_size):
-        for j in range(world_size):
+    for i in range(world_size[1]):
+        for j in range(world_size[0]):
             # use frozensets because they are hashable
             if frozenset(world[i][j]) in niches:
                 if mode == "freq":
