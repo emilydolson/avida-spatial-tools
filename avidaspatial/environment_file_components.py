@@ -1,3 +1,7 @@
+import random
+import math
+
+
 def gen_gradient(args, resource, inflow, radius, loc, common=True):
     """
     Returns a line of text to add to an environment file, initializing a
@@ -60,11 +64,15 @@ def calcEvenAnchors(args):
     """
     Calculates anchor points evenly spaced across the world, given
     user-specified parameters.
+
+    Note: May not be exactly even if world size is not divisible by
+    patches+1.
+    Note: Eveness is based on bounded world, not toroidal.
     """
     anchors = []
-    dist = (args.worldSize+1)/(args.patchesPerSide+1)
-    for i in range(dist-1, args.worldSize, dist):
-        for j in range(dist-1, args.worldSize, dist):
+    dist = int((args.worldSize)/(args.patchesPerSide+1))
+    for i in range(dist, args.worldSize, dist):
+        for j in range(dist, args.worldSize, dist):
             anchors.append((i, j))
     return anchors
 
@@ -73,8 +81,7 @@ def calcRandomAnchors(args, inworld=True):
     """
     Generates a list of random anchor points such that all circles will fit
     in the world, given the specified radius and worldsize.
-    The number of anchors to generate is determined by squaring the specified
-    number of patches per side.
+    The number of anchors to generate is given by nPatches
     """
     anchors = []
     rng = (args.patchRadius, args.worldSize - args.patchRadius)
@@ -83,64 +90,6 @@ def calcRandomAnchors(args, inworld=True):
     for i in range(args.nPatches):
         anchors.append((random.randrange(rng[0], rng[1]),
                         random.randrange(rng[0], rng[1])))
-
-    return anchors
-
-
-def get_surrounding_coord_even(coord, d, dsout):
-    return [coord + int(floor(d/2.0))+d*i for i in range(dsout)]\
-             + [coord - (int(ceil(d/2.0))+d*i) for i in range(dsout)]
-
-
-def get_surrounding_coord_odd(coord, d, dsout):
-    return [coord + d*i for i in range(dsout)] +\
-           [coord - d*i for i in range(dsout)]
-
-
-def add_anchors(centerPoint, d, dsout, anchors, even=True):
-
-    if even:
-        xs = get_surrounding_coord_even(centerPoint[0], d, dsout)
-        ys = get_surrounding_coord_even(centerPoint[0], d, dsout)
-
-    else:
-        xs = get_surrounding_coord_odd(centerPoint[0], d, dsout)
-        ys = get_surrounding_coord_odd(centerPoint[0], d, dsout)
-
-    pairwise_point_combination(xs, ys, anchors)
-
-
-def calcTightAnchors(args, d, patches):
-    """
-    Recursively generates the number of anchor points specified in the
-    patches argument, such that all patches are d cells away
-    from their nearest neighbors.
-    """
-    centerPoint = (int(args.worldSize/2), int(args.worldSize/2))
-    anchors = []
-    if patches == 0:
-        pass
-
-    elif patches == 1:
-        anchors.append(centerPoint)
-
-    elif patches % 2 == 0:
-        dsout = (patches-2)/2 + 1
-        add_anchors(centerPoint, d, dsout, anchors, True)
-        if d != 0:
-            anchors = list(set(anchors))
-        anchors.sort()
-        if dsout != 1:
-            return (anchors + calcTightAnchors(d, patches-2))[:patches*patches]
-            # to cut off the extras in the case where d=0
-
-    else:
-        # Note - an odd number of args.patchesPerSide requires that there be
-        # a patch at the centerpoint
-        dsout = (patches-1)/2
-        add_anchors(centerPoint, d, dsout, anchors, False)
-        if dsout != 1:
-            return anchors + calcTightAnchors(d, patches-2)
 
     return anchors
 
@@ -158,6 +107,66 @@ def pairwise_point_combinations(xs, ys, anchors):
         anchors.append((min(xs), i))
 
 
+def get_surrounding_coord_even(coord, d, dsout):
+    return [coord + int(math.floor(d/2.0))+d*i for i in range(dsout)]\
+             + [coord - (int(math.ceil(d/2.0))+d*i) for i in range(dsout)]
+
+
+def get_surrounding_coord_odd(coord, d, dsout):
+    return [coord + d*i for i in range(dsout)] +\
+           [coord - d*i for i in range(dsout)]
+
+
+def add_anchors(centerPoint, d, dsout, anchors, even=True):
+
+    if even:
+        xs = get_surrounding_coord_even(centerPoint[0], d, dsout)
+        ys = get_surrounding_coord_even(centerPoint[0], d, dsout)
+
+    else:
+        xs = get_surrounding_coord_odd(centerPoint[0], d, dsout)
+        ys = get_surrounding_coord_odd(centerPoint[0], d, dsout)
+
+    pairwise_point_combinations(xs, ys, anchors)
+
+
+def calcTightAnchors(args, d, patches):
+    """
+    Recursively generates the number of anchor points specified in the
+    patches argument, such that all patches are d cells away
+    from their nearest neighbors.
+    """
+    centerPoint = (int(args.worldSize/2), int(args.worldSize/2))
+    anchors = []
+    if patches == 0:
+        pass
+
+    elif patches == 1:
+        anchors.append(centerPoint)
+
+    elif patches % 2 == 0:
+        dsout = int((patches-2)//2) + 1
+        add_anchors(centerPoint, d, dsout, anchors, True)
+        if d != 0:
+            anchors = list(set(anchors))
+        anchors.sort()
+        if dsout != 1:
+            return (anchors +
+                    calcTightAnchors(args, d, patches-2)
+                    )[:patches*patches]
+            # to cut off the extras in the case where d=0
+
+    else:
+        # Note - an odd number of args.patchesPerSide requires that there be
+        # a patch at the centerpoint
+        dsout = int((patches-1)//2)
+        add_anchors(centerPoint, d, dsout, anchors, False)
+        if dsout != 1:
+            return anchors + calcTightAnchors(d, patches-2)
+
+    return anchors
+
+
 def random_patch(args, size):
     start_point = [random.randrange(0, args.worldSize),
                    random.randrange(0, args.worldSize)]
@@ -165,7 +174,7 @@ def random_patch(args, size):
     perimeter = [start_point]
     while len(curr_patch) < size:
         to_expand = random.choice(perimeter)
-        neighbors = get_moore_neighbors(to_expand)
+        neighbors = get_moore_neighbors(args, to_expand)
         neighbors = [n for n in neighbors if n not in curr_patch]
         if len(neighbors) == 0:
             perimeter.remove(to_expand)
@@ -204,10 +213,10 @@ def genRandResources(args, resources):
     number of all resources in a random order
     """
     randResources = []
-    nEach = args.nPatches / len(resources)
-    extras = args.nPatches % len(resources)
+    nEach = int(args.nPatches // len(resources))
+    extras = int(args.nPatches % len(resources))
     for i in range(nEach):
-        for res in args.resources:
+        for res in resources:
             randResources.append(res + str(i))
 
     additional = random.sample(resources, extras)

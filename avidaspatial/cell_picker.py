@@ -4,13 +4,13 @@
 # Based on code from
 # http://stackoverflow.com/questions/26988204/using-2d-array-to-create-clickable-tkinter-canvas
 
-try:
+try:  # pragma: no cover
     import tkinter as tk
-except:
+except:  # pragma: no cover
     import Tkinter as tk
 
 
-class cell_picker():
+class cell_picker():  # pragma: no cover
     """
     The cell_picker class produces a graphical window containing a grid of
     squares. Clicking a cell will turn it black and add it to the list of
@@ -133,12 +133,12 @@ class cell_picker():
 
         print(len(self.cells), "cells selected")
 
-    def run(self):
+    def run(self):  # pragma: no cover
         """
         Makes the cell_picker actually do stuff and returns the result.
         """
         self.root.mainloop()
         return self.cells
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     print(cell_picker(60, 60).run())

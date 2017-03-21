@@ -313,6 +313,7 @@ def paired_environment_phenotype_grid(environment, phenotypes, **kwargs):
     plt.savefig("phenotype_niches_" + environment.name + ".png", dpi=1000)
     print("done")
 
+
 def paired_environment_phenotype_grid_circles(environment,
                                               phenotypes, **kwargs):
     """
