@@ -160,6 +160,7 @@ def parse_environment_file(filename, world_size=(60, 60)):
     tasks = []
 
     # Find all spatial resources and record which cells they're in
+    res_order = []
     res_dict = {}
     for line in lines:
         if line.startswith("GRADIENT_RESOURCE"):
@@ -174,11 +175,13 @@ def parse_environment_file(filename, world_size=(60, 60)):
             continue
 
         dict_increment(res_dict, name, cells)
+        if name not in res_order:
+            res_order.append(name)
 
     # Create a map of niches across the environment and return it
     grid = make_niche_grid(res_dict, world_size)
 
-    return EnvironmentFile(grid, res_dict.keys(), world_size, filename, tasks)
+    return EnvironmentFile(grid, res_order, world_size, filename, tasks)
 
 
 def parse_reaction(line):

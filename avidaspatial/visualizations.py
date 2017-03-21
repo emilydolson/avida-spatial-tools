@@ -101,8 +101,10 @@ def paired_environment_phenotype_movie(environment, phenotypes, **kwargs):
     anim = matplotlib.animation.FuncAnimation(
         fig, animate, init_func=init,
         frames=len(phenotypes[0][0]), blit=True, interval=750)
-
-    anim.save(environment.name + "_phenotype_overlay.mov")
+    print(environment.name)
+    # print(anim.to_html5_video())
+    anim.save(environment.name + "_phenotype_overlay.mov",
+              writer=matplotlib.animation.ImageMagickWriter())
     return anim
 
 
@@ -267,7 +269,7 @@ def plot_world(world, **kwargs):
                     labelright="off", bottom="off", top="off",
                     left="off", right="off")
     # plt.tight_layout()
-    plt.imshow(world, interpolation="none", hold=True, zorder=1)
+    plt.imshow(world, interpolation="none", zorder=1)
     axes = plt.gca()
     axes.autoscale(False)
 
@@ -303,12 +305,13 @@ def paired_environment_phenotype_grid(environment, phenotypes, **kwargs):
     """
 
     denom, palette = get_kwargs(environment, kwargs)
-
+    print("plot world")
     plot_world(environment, palette=environment.resource_palette, denom=denom)
+    print("plot phens")
     plot_phens(phenotypes, palette=environment.task_palette, denom=denom)
-
-    plt.savefig("phenotype_niches_" + environment.name + ".png", dpi=2000)
-
+    print("save")
+    plt.savefig("phenotype_niches_" + environment.name + ".png", dpi=1000)
+    print("done")
 
 def paired_environment_phenotype_grid_circles(environment,
                                               phenotypes, **kwargs):
