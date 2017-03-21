@@ -5,8 +5,9 @@ import string
 from matplotlib import pyplot as plt
 import matplotlib
 import matplotlib.animation
-from utils import *
-from transform_data import *
+from .utils import *
+from .transform_data import *
+from .parse_files import *
 import seaborn as sns
 
 

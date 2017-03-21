@@ -3,9 +3,9 @@
 # data output files.
 
 import re
-from avidaspatial.utils import *
+from .utils import *
 from copy import deepcopy
-from environment_file import EnvironmentFile
+from .environment_file import EnvironmentFile
 
 
 def load_grid_data(file_list, data_type="binary", sort=True, delim=" "):

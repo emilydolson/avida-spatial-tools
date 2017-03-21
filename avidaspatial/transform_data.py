@@ -1,4 +1,4 @@
-from avidaspatial import *
+from .utils import *
 from scipy.spatial.distance import pdist
 import scipy.cluster.hierarchy as hierarchicalcluster
 

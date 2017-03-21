@@ -1,9 +1,11 @@
-from parse_files import *
-from utils import *
-from visualizations import *
-from transform_data import *
-from environment_file import *
-from cell_picker import *
-from landscape_stats import *
-from environment_file_components import *
-import environment_generator as eg
+from .environment_file import EnvironmentFile
+from .environment_file_components import *
+from .cell_picker import *
+from .landscape_stats import *
+
+from .utils import *
+
+from .parse_files import *
+from .transform_data import *
+
+from .visualizations import *

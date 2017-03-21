@@ -1,5 +1,5 @@
 from math import sqrt, pi, floor, ceil
-from avidaspatial.utils import *
+from avidaspatial import *
 import sys
 import glob
 from collections import deque
