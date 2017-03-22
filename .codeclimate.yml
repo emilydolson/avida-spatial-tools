@@ -6,3 +6,12 @@ languages:
 exclude_paths:
 - "tests/test_*.py"
 - "dev/*"
+
+engines:
+  # ... CONFIG CONTENT ...
+  :
+    enabled: true
+    # ... CONFIG CONTENT ...
+    exclude_fingerprints:
+    - 8c8ab63ce930baee4a83d6b525abaf1f
+# ... CONFIG CONTENT .
