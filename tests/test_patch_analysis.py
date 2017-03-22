@@ -7,7 +7,8 @@ def test_area():
 
 
 def test_perimeter():
-    assert(perimeter([[0, 0], [0, 1], [0, 2], [0, 3], [1, 1]]) == 12)
+    assert(perimeter([[0, 0], [0, 1], [0, 2], [0, 3], [1, 1]],
+                     neighbor_func=get_rook_neighbors_toroidal) == 12)
 
 
 def test_get_edge_locations():
@@ -19,7 +20,7 @@ def test_get_edge_locations():
              [5, 0], [5, 1], [5, 2], [5, 3],
              [6, 0], [6, 1], [6, 2], [6, 3],
              [7, 0], [7, 1], [7, 2], [7, 3]]
-    edge = get_edge_locations(patch)
+    edge = get_edge_locations(patch, neighbor_func=get_rook_neighbors_toroidal)
     edge.sort()
     assert(edge == [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 3),
                     (2, 0), (2, 2), (2, 3),
@@ -44,8 +45,8 @@ def test_is_edge():
     assert(not isedge((1, 1), patch))
 
 
-def test_get_moore_neighbors():
-    moore = get_moore_neighbors([0, 0], 60)
+def test_get_moore_neighbors_toroidal():
+    moore = get_moore_neighbors_toroidal([0, 0], (60, 60))
     moore.sort()
     expected = [[0, 59], [59, 0], [1, 0], [0, 1],
                 [1, 59], [59, 59], [1, 1], [59, 1]]
@@ -53,10 +54,26 @@ def test_get_moore_neighbors():
     assert(moore == expected)
 
 
-def test_get_rook_neighbors():
-    rook = get_rook_neighbors([0, 0], 60)
+def test_get_moore_neighbors():
+    moore = get_moore_neighbors([0, 0], (60, 60))
+    moore.sort()
+    expected = [[1, 0], [0, 1], [1, 1]]
+    expected.sort()
+    assert(moore == expected)
+
+
+def test_get_rook_neighbors_toroidal():
+    rook = get_rook_neighbors_toroidal([0, 0], (60, 60))
     rook.sort()
     expected = [[0, 59], [59, 0], [1, 0], [0, 1]]
+    expected.sort()
+    assert(rook == expected)
+
+
+def test_get_rook_neighbors():
+    rook = get_rook_neighbors([0, 0], (60, 60))
+    rook.sort()
+    expected = [[1, 0], [0, 1]]
     expected.sort()
     assert(rook == expected)
 
@@ -83,11 +100,13 @@ def test_radius_of_gyration():
 
 
 def test_perimeter_area_ratio():
-    result = perimeter_area_ratio([[0, 0], [0, 1], [0, 2], [1, 1]])
+    result = perimeter_area_ratio([[0, 0], [0, 1], [0, 2], [1, 1]],
+                                  neighbor_func=get_rook_neighbors_toroidal)
     assert(result == 2.5)
     result = perimeter_area_ratio([[0, 0], [0, 1], [0, 2],
                                    [1, 0], [1, 1], [1, 2],
-                                   [2, 0], [2, 1], [2, 2]])
+                                   [2, 0], [2, 1], [2, 2]],
+                                  neighbor_func=get_rook_neighbors_toroidal)
     assert(np.isclose(result, 1.3333333333))
 
 
@@ -150,9 +169,9 @@ def test_number_core_areas():
              [6, 0], [6, 1], [6, 2], [6, 3],
              [7, 0], [7, 1], [7, 2], [7, 3]]
 
-    assert(number_core_areas(patch, 1, 60) == 2)
-    assert(number_core_areas(patch, 0, 60) == 1)
-    assert(number_core_areas(patch, 2, 60) == 0)
+    assert(number_core_areas(patch, 1, (60, 60)) == 2)
+    assert(number_core_areas(patch, 0, (60, 60)) == 1)
+    assert(number_core_areas(patch, 2, (60, 60)) == 0)
 
 
 def test_get_core_areas():
@@ -165,7 +184,7 @@ def test_get_core_areas():
              [6, 0], [6, 1], [6, 2], [6, 3],
              [7, 0], [7, 1], [7, 2], [7, 3]]
 
-    cores = get_core_areas(patch, 1, 60)
+    cores = get_core_areas(patch, 1, (60, 60))
     cores.sort()
     for core in cores:
         core.sort()

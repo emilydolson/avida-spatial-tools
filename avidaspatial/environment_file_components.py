@@ -174,7 +174,7 @@ def random_patch(args, size):
     perimeter = [start_point]
     while len(curr_patch) < size:
         to_expand = random.choice(perimeter)
-        neighbors = get_moore_neighbors(args, to_expand)
+        neighbors = get_moore_neighbors_toroidal(args, to_expand)
         neighbors = [n for n in neighbors if n not in curr_patch]
         if len(neighbors) == 0:
             perimeter.remove(to_expand)
@@ -192,7 +192,7 @@ def random_patch(args, size):
     return index_cells
 
 
-def get_moore_neighbors(args, cell):
+def get_moore_neighbors_toroidal(args, cell):
     neighbors = []
     for x in range(cell[0]-1, cell[0]+2):
         for y in range(cell[1]-1, cell[1]+2):
