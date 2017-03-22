@@ -157,6 +157,19 @@ def test_paired_environment_phenotype_movie():
     paired_environment_phenotype_movie(env, phenotypes)
 
 
+def test_diversity_heat_map():
+    fig = plt.figure()
+    world = load_grid_data("tests/grid_task.10000.dat")
+    world = agg_grid(world, mode)
+
+    data = diversity_map(world)
+    pal = sns.color_palette("bone")
+    pal.reverse()
+    denom = max([max(i) for i in data])
+    heat_map(data, "diversity_example", mask_zeros=True,
+             palette=pal, denom=denom)
+    return fig
+
 # def test_make_movie():
 #     fig = plt.figure()
 #     print(glob.glob("tests/positivegrid_task.*.dat"))
@@ -165,9 +178,10 @@ def test_paired_environment_phenotype_movie():
 #     make_movie(phenotypes)
 
 if __name__ == "__main__":
-    test_paired_environment_phenotype_movie()
+    # test_paired_environment_phenotype_movie()
     # test_color_percentages()
     # test_visualize_environment()
     # test_paired_environment_phenotype_grid_circles()
     # test_paired_environment_phenotype_grid()
     # test_make_movie()
+    test_diversity_heat_map()

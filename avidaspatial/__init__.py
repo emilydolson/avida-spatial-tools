@@ -9,5 +9,6 @@ from .utils import *
 
 from .parse_files import *
 from .transform_data import *
+from .spatial_analysis import *
 
 from .visualizations import *
