@@ -49,6 +49,18 @@ The visualization functions in Avida Spatial Tools are designed to be mixed and 
     * Represent phenotypes as concentric circles representing tasks that individual can do
   * Make a movie showing overlaid phenotypes changing over time
 
+# Building from source:
+If you want to use the bleeding edge development version from github, rather than the last stable release from PyPI, you can install it with the following commands:
+
+```
+git clone git@github.com:emilydolson/avida-spatial-tools.git
+cd avida-spatial-tools
+python setup.py build
+python setup.py install
+```
+
+You will need to re-execute the last two commands after making or pulling changes to the repository.
+
 # Development:
 If you have requests for new features submit an issue or e-mail me - I'm happy to add things! Or, if you feel so inclined, feel free to implement them yourself and send me a pull request. I've tried to keep things pretty modular, so it shouldn't be too hard. I use py.test for testing because it was the easiest testing framework to get working with image regregression tests.
 
