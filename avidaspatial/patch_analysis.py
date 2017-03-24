@@ -67,6 +67,21 @@ def get_moore_neighbors_toroidal(cell, world_size=(60, 60)):
     return neighbors
 
 
+def get_25_neighbors(cell, world_size=(60, 60)):
+    if isinstance(cell, tuple):
+        neighbors = [(x, y)
+                     for x in range(cell[0]-2, cell[0]+3)
+                     for y in range(cell[1]-2, cell[1]+3)
+                     if in_bounds([x, y], world_size)]
+    else:
+        neighbors = [[x, y]
+                     for x in range(cell[0]-2, cell[0]+3)
+                     for y in range(cell[1]-2, cell[1]+3)
+                     if in_bounds([x, y], world_size)]
+    neighbors.remove(cell)
+    return neighbors
+
+
 def area(patch):
     return len(patch)
 
@@ -374,7 +389,6 @@ def traverse_core(core_area, world_size=(60, 60),
     cores = [[curr]]
 
     while core_area:
-        print(core_area)
         neighbors = neighbor_func(curr, world_size)
 
         for n in neighbors:
